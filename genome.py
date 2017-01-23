@@ -80,102 +80,104 @@ def write_longform_gff(annotation_set,keep_UTR_features = False):
     gfflines = []
     fields = ['seqid','source','feature_type','get_coords()[0]','get_coords()[1]','score','strand','phase']
     #adds matches to gff
-    for match in annotation_set.match:
-        match_obj = annotation_set.match[match]
-        newline_list = []
-        for field in fields:
-            try:
-                newline_list.append(str(eval('match_obj.' + field)))
-            except:
-                newline_list.append('.')
-        attribute_list = ['ID=' + match_obj.ID]
-        for attribute in match_obj.__dict__:
-            if not attribute in fields+['annotation_set','parent','child_list','ID']:
-                attribute_list.append(attribute + '=' + eval('match_obj.' + attribute))
-        newline_list.append(';'.join(attribute_list))
-        gfflines.append('\t'.join(newline_list))
-        for match_part in match_obj.child_list:
-            match_part_obj = annotation_set[match_part]
+    if 'match' in annotation_set.__dict__:
+        for match in annotation_set.match:
+            match_obj = annotation_set.match[match]
             newline_list = []
             for field in fields:
                 try:
-                    newline_list.append(str(eval('match_part_obj.' + field)))
+                    newline_list.append(str(eval('match_obj.' + field)))
                 except:
                     newline_list.append('.')
-            attribute_list = ['ID=' + match_part_obj.ID,'Parent=' + match_part_obj.parent]
-            for attribute in match_part_obj.__dict__:
-                if not attribute in fields+['annotation_set','parent','child_list','ID','coords']:
-                    attribute_list.append(attribute + '=' + eval('match_part_obj.' + attribute))
+            attribute_list = ['ID=' + match_obj.ID]
+            for attribute in match_obj.__dict__:
+                if not attribute in fields+['annotation_set','parent','child_list','ID']:
+                    attribute_list.append(attribute + '=' + eval('match_obj.' + attribute))
             newline_list.append(';'.join(attribute_list))
             gfflines.append('\t'.join(newline_list))
-    #adds genes to gff
-    for gene in annotation_set.gene:
-        gene_obj = annotation_set.gene[gene]
-        newline_list = []
-        for field in fields:
-            try:
-                newline_list.append(str(eval('gene_obj.' + field)))
-            except:
-                newline_list.append('.')
-        attribute_list = ['ID='+gene_obj.ID]
-        for attribute in gene_obj.__dict__:
-            if not attribute in fields+['annotation_set','parent','child_list','ID']:
-                attribute_list.append(attribute + '=' + eval('gene_obj.' + attribute))
-        newline_list.append(';'.join(attribute_list))
-        gfflines.append('\t'.join(newline_list))
-        for gene_child in gene_obj.child_list:
-            gene_child_obj = annotation_set[gene_child]
-            if gene_child_obj.feature_type == 'transcript':
-                transcript_obj = gene_child_obj
+            for match_part in match_obj.child_list:
+                match_part_obj = annotation_set[match_part]
                 newline_list = []
                 for field in fields:
                     try:
-                        newline_list.append(str(eval('transcript_obj.'+field)).replace('transcript','mRNA'))
+                        newline_list.append(str(eval('match_part_obj.' + field)))
                     except:
                         newline_list.append('.')
-                attribute_list = ['ID='+transcript_obj.ID,'Parent='+transcript_obj.parent]
-                for attribute in gene_obj.__dict__:
-                    if not attribute in fields+['annotation_set','parent','child_list','ID']:
-                        attribute_list.append(attribute + '=' + eval('transcript_obj.' + attribute))
+                attribute_list = ['ID=' + match_part_obj.ID,'Parent=' + match_part_obj.parent]
+                for attribute in match_part_obj.__dict__:
+                    if not attribute in fields+['annotation_set','parent','child_list','ID','coords']:
+                        attribute_list.append(attribute + '=' + eval('match_part_obj.' + attribute))
                 newline_list.append(';'.join(attribute_list))
                 gfflines.append('\t'.join(newline_list))
-                exondict = {}
-                CDS_UTR_dict = {}
-                for transcript_child in transcript_obj.child_list:
-                    transcript_child_obj = annotation_set[transcript_child]
-                    line_base_list = []
+        #adds genes to gff
+    if 'gene' in annotation_set.__dict__:
+        for gene in annotation_set.gene:
+            gene_obj = annotation_set.gene[gene]
+            newline_list = []
+            for field in fields:
+                try:
+                    newline_list.append(str(eval('gene_obj.' + field)))
+                except:
+                    newline_list.append('.')
+            attribute_list = ['ID='+gene_obj.ID]
+            for attribute in gene_obj.__dict__:
+                if not attribute in fields+['annotation_set','parent','child_list','ID']:
+                    attribute_list.append(attribute + '=' + eval('gene_obj.' + attribute))
+            newline_list.append(';'.join(attribute_list))
+            gfflines.append('\t'.join(newline_list))
+            for gene_child in gene_obj.child_list:
+                gene_child_obj = annotation_set[gene_child]
+                if gene_child_obj.feature_type == 'transcript':
+                    transcript_obj = gene_child_obj
+                    newline_list = []
                     for field in fields:
                         try:
-                            line_base_list.append(str(eval('transcript_child_obj.'+ field)))
+                            newline_list.append(str(eval('transcript_obj.'+field)).replace('transcript','mRNA'))
                         except:
-                            line_base_list.append('.')
-                    exon_attributes = 'ID=' + transcript_child_obj.ID + '-exon;Parent=' + transcript_child_obj.parent
-                    transcript_child_attribute_list = ['ID=' + transcript_child_obj.ID, 'Parent=' + transcript_child_obj.parent]
-                    for attribute in transcript_child_obj.__dict__:
-                        if not attribute in fields+['annotation_set','parent','child_list','ID','coords']:
-                            transcript_child_attribute_list.append(attribute + '=' + eval('transcript_child_obj.' + attribute))
-                    transcript_child_attributes = ';'.join(transcript_child_attribute_list)
-                    exondict[transcript_child_obj.coords] = '\t'.join(line_base_list).replace('CDS','exon').replace('UTR','exon') + '\t' + exon_attributes
-                    CDS_UTR_dict[transcript_child_obj.coords] = '\t'.join(line_base_list) +'\t' + transcript_child_attributes
-                exondict_list = list(exondict)
-                exondict_list.sort()
-                CDS_UTR_dict_list = list(CDS_UTR_dict)
-                CDS_UTR_dict_list.sort()
-                #merges adjacent exons from abbutting UTRs and CDSs and writes exon gff lines
-                for i in range(len(exondict_list) - 1):
-                    if exondict_list[i][1] + 1 == exondict_list[i+1][0]:
-                        del exondict[exondict_list[i]]
-                        new_exon_list = exondict[exondict_list[i+1]].split('\t')
-                        exondict[exondict_list[i+1]] = '\t'.join(new_exon_list[:3]+[str(exondict_list[i][0]),str(exondict_list[i+1][1])]+new_exon_list[5:])
-                    else:
-                        gfflines.append(exondict[exondict_list[i]])
-                gfflines.append(exondict[exondict_list[-1]])
-                for i in CDS_UTR_dict_list:
-                    if CDS_UTR_dict[i].split('\t')[2] == 'CDS' or keep_UTR_features:
-                        gfflines.append(CDS_UTR_dict[i])
-            else:
-                print 'ERROR: currently only accepts AnnotationSets with gene format CDS/UTR -> transcript -> gene'
-                break
+                            newline_list.append('.')
+                    attribute_list = ['ID='+transcript_obj.ID,'Parent='+transcript_obj.parent]
+                    for attribute in gene_obj.__dict__:
+                        if not attribute in fields+['annotation_set','parent','child_list','ID']:
+                            attribute_list.append(attribute + '=' + eval('transcript_obj.' + attribute))
+                    newline_list.append(';'.join(attribute_list))
+                    gfflines.append('\t'.join(newline_list))
+                    exondict = {}
+                    CDS_UTR_dict = {}
+                    for transcript_child in transcript_obj.child_list:
+                        transcript_child_obj = annotation_set[transcript_child]
+                        line_base_list = []
+                        for field in fields:
+                            try:
+                                line_base_list.append(str(eval('transcript_child_obj.'+ field)))
+                            except:
+                                line_base_list.append('.')
+                        exon_attributes = 'ID=' + transcript_child_obj.ID + '-exon;Parent=' + transcript_child_obj.parent
+                        transcript_child_attribute_list = ['ID=' + transcript_child_obj.ID, 'Parent=' + transcript_child_obj.parent]
+                        for attribute in transcript_child_obj.__dict__:
+                            if not attribute in fields+['annotation_set','parent','child_list','ID','coords']:
+                                transcript_child_attribute_list.append(attribute + '=' + eval('transcript_child_obj.' + attribute))
+                        transcript_child_attributes = ';'.join(transcript_child_attribute_list)
+                        exondict[transcript_child_obj.coords] = '\t'.join(line_base_list).replace('CDS','exon').replace('UTR','exon') + '\t' + exon_attributes
+                        CDS_UTR_dict[transcript_child_obj.coords] = '\t'.join(line_base_list) +'\t' + transcript_child_attributes
+                    exondict_list = list(exondict)
+                    exondict_list.sort()
+                    CDS_UTR_dict_list = list(CDS_UTR_dict)
+                    CDS_UTR_dict_list.sort()
+                    #merges adjacent exons from abbutting UTRs and CDSs and writes exon gff lines
+                    for i in range(len(exondict_list) - 1):
+                        if exondict_list[i][1] + 1 == exondict_list[i+1][0]:
+                            del exondict[exondict_list[i]]
+                            new_exon_list = exondict[exondict_list[i+1]].split('\t')
+                            exondict[exondict_list[i+1]] = '\t'.join(new_exon_list[:3]+[str(exondict_list[i][0]),str(exondict_list[i+1][1])]+new_exon_list[5:])
+                        else:
+                            gfflines.append(exondict[exondict_list[i]])
+                    gfflines.append(exondict[exondict_list[-1]])
+                    for i in CDS_UTR_dict_list:
+                        if CDS_UTR_dict[i].split('\t')[2] == 'CDS' or keep_UTR_features:
+                            gfflines.append(CDS_UTR_dict[i])
+                else:
+                    print 'ERROR: currently only accepts AnnotationSets with gene format CDS/UTR -> transcript -> gene'
+                    break
     return '\n'.join(gfflines)
     
 
@@ -332,9 +334,51 @@ def read_cegma_gff(cegma_gff,annotation_set_to_modify = None):
         return annotation_set
 
 
-
-    
-
+def read_blast_csv(blast_csv,annotation_set_to_modify = None,hierarchy = ['match','match_part'], source = 'blast'):
+    """Reads csv output from blast (-outfmt 10) into an AnnotationSet object. Currently does not string hits together because I'm
+    biased towards working on genes in tandem arrays where stringing hits together is annoying. May add option in future."""
+    #reads blast_csv from file location, file, or string
+    blast_lines = read_to_string(blast_csv).split('\n')
+    #checks if annotation_set is given and creates annotation_set if not
+    if annotation_set_to_modify == None:
+        annotation_set = AnnotationSet()
+    else:
+        annotation_set = annotation_set_to_modify
+    id_generator_dict = {}
+    feature_type = hierarchy[-1]
+    create_parents_chain = hierarchy[:-1]
+    create_parents_chain.reverse()
+    if not feature_type in annotation_set.__dict__:
+        setattr(annotation_set, feature_type, {})
+    for line in blast_lines:
+        fields = line.split(',')
+        seqid = fields[1]
+        tstart = int(fields[8])
+        tend = int(fields[9])
+        if tstart < tend:
+            coords = (tstart,tend)
+            strand = '+'
+        else:
+            coords = (tend,tstart)
+            strand = '-'
+        score = fields[11]
+        IDbase = fields[0]
+        if IDbase in eval('annotation_set.' + feature_type):
+            ID = IDbase + '-' + str(id_generator_dict[IDbase])
+            id_generator_dict[IDbase] = id_generator_dict[IDbase] + 1
+            while ID in eval('annotation_set.' + feature_type):
+                ID = IDbase + '-' + str(id_generator_dict[IDbase])
+                id_generator_dict[IDbase] = id_generator_dict[IDbase] + 1
+        else:
+            ID = IDbase
+            id_generator_dict[IDbase] = 1
+        other_attributes = {}
+        other_attributes['evalue'] = fields[10]
+        parent = ID + '-match'
+        eval('annotation_set.' + feature_type)[ID] = BaseAnnotation(ID, seqid, coords, feature_type, parent, other_attributes,
+                                                                    annotation_set, create_parents_chain)
+    if annotation_set_to_modify == None:
+        return annotation_set
 
 
 class AnnotationSet():
@@ -347,17 +391,38 @@ class AnnotationSet():
         self.transcript = {}
         self.CDS = {}
         self.UTR = {}
+    
     def __getitem__(self,item):
         all_dicts = {}
         for attribute in dir(self):
-            if type(eval("self."+attribute)) == dict:
+            if type(eval("self." + attribute)) == dict:
                 try:
-                    all_dicts[item] = eval("self."+attribute)[item]
+                    all_dicts[item] = eval("self." + attribute)[item]
                 except:
                     pass
         return all_dicts[item]
+    
     def read_gff3(self, gff3):
         read_gff3(gff3, annotation_set_to_modify = self)
+    
+    def get_seqid(self, seqid):
+        seqid_annotation_set = AnnotationSet()        
+        for attribute in dir(self):
+            if type(eval("self." + attribute)) == dict:
+                setattr(seqid_annotation_set,attribute,{})
+                for feature in eval('self.'+ attribute):
+                    feature_obj = eval('self.' + attribute)[feature]
+                    if feature_obj.seqid == seqid:
+                        eval('seqid_annotation_set.' + feature_obj.feature_type)[feature] = feature_obj
+        return seqid_annotation_set
+    
+    def get_all_seqids(self):
+        seqid_list = []
+        for attribute in dir(self):
+            if type(eval("self." + attribute)) == dict:
+                for feature in eval('self.'+ attribute):
+                    seqid_list.append(eval('self.' + attribute)[feature].seqid)
+        return list(set(seqid_list))
     
 
 class BaseAnnotation():
@@ -391,17 +456,15 @@ class BaseAnnotation():
             #Executes parent creation process if parent needs to be created
             else:
                 #sets up hierarchy for parent creation
-                #debug
-                if feature_type == 'match_part':
-                    print annotation_set.__dict__[create_parents_chain[0]][parent]
-                    joe = deliberateerror
-                #
                 hierarchy = {feature_type: create_parents_chain[0]}
                 for feature_index in range(len(create_parents_chain))[:-1]:
                     hierarchy[create_parents_chain[feature_index]] = create_parents_chain[feature_index + 1]
                 active_feature_type = feature_type
                 active_feature_ID = ID
-                self.parent = parent + '-' + create_parents_chain[0]
+                if len(create_parents_chain) > 1:
+                    self.parent = parent + '-' + create_parents_chain[0]
+                else:
+                    self.parent = parent
                 parent_to_create = parent + '-' + hierarchy[active_feature_type]
                 #checks if parent needs to be created and creates parent
                 if len(create_parents_chain) > 1:
@@ -409,9 +472,9 @@ class BaseAnnotation():
                         parent_to_create = parent + '-' + hierarchy[active_feature_type]
                         #checks whether this is second-to-last round of parent creation
                         if active_feature_type == create_parents_chain[-2]:
-                            next_level_parent = parent
+                            parent_to_create = parent
                             break
-                        elif parent in annotation_set.__dict__[hierarchy[hierarchy[active_feature_type]]]:
+                        elif parent in annotation_set.__dict__[hierarchy[hierarchy[active_feature_type]]] or hierarchy[active_feature_type] == create_parents_chain[-2]:
                             next_level_parent = parent
                         else:
                             next_level_parent = parent + '-' + hierarchy[hierarchy[active_feature_type]]
@@ -428,9 +491,6 @@ class BaseAnnotation():
                 #checks if parent was found or last-level parent needs to be created
                 try:
                     annotation_set.__dict__[hierarchy[active_feature_type]][parent]
-                    #debug
-                    print ID
-                    #
                 except KeyError:
                     try:
                         annotation_set.__dict__[hierarchy[active_feature_type]][parent_to_create].child_list.append(ID)
@@ -507,6 +567,27 @@ class Genome():
             self.genome_sequence = GenomeSequence(genome_sequence)
         self.annotations = annotations
     
-    def get_scaffold_fasta(self, scaffold_name):
-        return '>' + scaffold_name + '\n' + self.genome_sequence[scaffold_name]
+    def get_scaffold_fasta(self, seqid):
+        return '>' + seqid + '\n' + self.genome_sequence[seqid]
     
+    def write_apollo_gff(self, seqid):
+        if self.genome_sequence != None and self.annotations != None:
+            return write_to_longform_gff(self.annotations.get_seqid(seqid)) + '\n' + self.get_scaffold_fasta(seqid)
+        else:
+            print "genome object is either missing genome_sequence or annotations"
+    
+    def get_seqids(self, from_annotations = False):
+        seqid_list = []
+        warning = False
+        if self.genome_sequence != None:
+            for seqid in self.genome_sequence:
+                seqid_list.append(seqid)
+        if self.annotations != None and from_annotations:
+            for seqid in self.annotations.get_all_seqids():
+                if seqid not in seqid_list:
+                    seqid_list.append(seqid)
+                    warning = True
+        if warning:
+            print "warning, some annotations possessed seqids not found in sequence dictionary"
+        return seqid_list
+
