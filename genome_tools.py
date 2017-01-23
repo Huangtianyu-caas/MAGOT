@@ -39,12 +39,12 @@ ps2pdf out.ps out.pdf""", shell = True
 def fqstats(fastq_location):
     """computes basic summary stats for fastq file"""
     lenlist = []
-    fastq = open(fastq)
+    fastq = open(fastq_location)
     fastq_line = fastq.readline()
     counter = 0
     while fastq_line != "":
         if counter % 4 == 1:
-            lenlist.append(len(fastq_line))
+            lenlist.append(len(fastq_line) - 1)
         counter = counter + 1
         fastq_line = fastq.readline()
     read_number = len(lenlist)
