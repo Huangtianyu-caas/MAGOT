@@ -62,11 +62,11 @@ def fqstats(fastq_location):
     for length in lenlist:
         nsum = nsum + length
         if nsum > basepairs / 4 and not n25:
-            n25 = nsum
+            n25 = lenlist[nsum]
         if nsum > basepairs / 2 and not n50:
-            n50 = nsum
+            n50 = lenlist[nsum]
         if nsum > basepairs * 3 / 4 and not n75:
-            n75 = nsum
+            n75 = lenlist[nsum]
     print str(read_number) + " reads"
     print "total basepairs=" + str(basepairs)
     print "median length=" + str(median_length)
