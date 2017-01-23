@@ -65,7 +65,7 @@ def fqstats(fastq_location):
             n25 = nsum
         if nsum > basepairs / 2 and not n50:
             n50 = nsum
-        if nsum > basepairs * 3 / 4 and not n70:
+        if nsum > basepairs * 3 / 4 and not n75:
             n75 = nsum
     print str(read_number) + " reads"
     print "total basepairs=" + str(basepairs)
