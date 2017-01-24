@@ -3,6 +3,16 @@
 import copy
 
 
+def apollo2genome(apollo_gff):
+    apollo_list = read_to_string(apollo_gff).split('>')
+    gff3 = apollo_list[0]
+    fasta = '>' + apollo_list[1]
+    return Genome(fasta,gff3,annotation_format='gff3')
+    
+    pass
+
+
+
 def vulgar2gff(vulgarstring, feature_types=['match','match_part'],source='exonerate'):
     """takes vulgar alignment string and outputs gff lines. For eventual use with a read_exonerate function"""
     #sets variables to be added to gff lines
@@ -386,11 +396,12 @@ class AnnotationSet():
     is stored in it's own dictionary as Annotations with their ID as their key (see "Annotation" class).
     The AnnotationSet itself also functions losely as a dictionary, in that any feature can be returned
     by indexing the AnnotationSet with the ID as a key (e.g. my_annotation_set["my_feature_ID"])"""
-    def __init__(self):
+    def __init__(self, genome = None):
         self.gene = {}
         self.transcript = {}
         self.CDS = {}
         self.UTR = {}
+        self.genome = genome
     
     def __getitem__(self,item):
         all_dicts = {}
@@ -502,6 +513,16 @@ class BaseAnnotation():
     def get_coords(self):
         return self.coords
     
+    def get_seq(self):
+        try:
+            if self.strand == '+':
+                return Sequence(self.annotation_set.genome.genome_sequence[self.seqid][self.coords[0]-1:self.coords[1]])
+            elif self.strand == '-':
+                return Sequence(self.annotation_set.genome.genome_sequence[self.seqid][self.coords[0]-1:self.coords[1]]).reverse_compliment()
+        except:
+            print "either base_annotation has not annotation_set, or annotation_set has no genome, or genome has no\
+            genome sequence, or genome sequence has no matching seqid, or coords are out of range on that seqid"
+    
 
 
 class ParentAnnotation():
@@ -535,12 +556,67 @@ class ParentAnnotation():
                     print "for some reason you have children in ParentAnnotation " + self.ID + " which are neither \
                     ParentAnnotation objects nor BaseAnnotation object. Get your act together"
             return (min(coords_list),max(coords_list))
-
+    
+    def get_fasta(self):
+        """Returns fasta of this annotation's sequence. If this feature has multiple subfeatures (e.g. this is a gene
+        and it has multiple transcripts), the sequence of each subfeature will be an entry in the fasta string."""
+        if len(self.child_list) > 0 and self.annotation_set != None:
+            if self.annotation_set.genome != None:
+                fasta_list = []
+                child_type = self.annotation_set[self.child_list[0]].__class__.__name__
+                if child_type == 'BaseAnnotation':
+                    seq_list = []
+                    child_dict = {}
+                    for child in self.child_list:
+                        child_obj = self.annotation_set[child]
+                        child_dict[child_obj.coords] = child_obj.get_seq()
+                        strand = child_obj.strand
+                    children_in_correct_order = list(child_dict)
+                    children_in_correct_order.sort()
+                    if strand == '-':
+                        children_in_correct_order.reverse()
+                    for child in children_in_correct_order:
+                        seq_list.append(child_dict[child])                    
+                    fasta_list.append('>' + self.ID + '\n' + ''.join(seq_list))
+                else:
+                    for child in self.child_list:
+                        fasta_list.append(self.annotation_set[child].get_fasta)
+                return '\n'.join(fasta_list)
+    
 
 class Sequence(str):
     """DNA sequence. Will eventually have methods allowing reverse complimenting,
         translating, etc."""
-    pass
+    def reverse_compliment(self):
+        """returns reverse compliment of self"""
+        new_sequence_list = []
+        compliment_dict = {'a':'t','t':'a','g':'c','c':'g','A':'T','T':'A','G':'C','C':'G','n':'n','N':'N','-':'-'}
+        for residue in self[::-1]:
+            new_sequence_list.append(compliment_dict[residue])
+        return ''.join(new_sequence_list)
+    
+    def translate(self,library = {'TTT':'F','TTC':'F','TTA':'L','TTG':'L','CTT':'L','CTC':'L','CTA':'L','CTG':'L',
+                                  'ATT':'I','ATC':'I','ATA':'I','ATG':'M','GTT':'V','GTC':'V','GTA':'V','GTG':'V',
+                                  'TCT':'S','TCC':'S','TCA':'S','TCG':'S','CCT':'P','CCC':'P','CCA':'P','CCG':'P',
+                                  'ACT':'T','ACC':'T','ACA':'T','ACG':'T','GCT':'A','GCC':'A','GCA':'A','GCG':'A',
+                                  'TAT':'Y','TAC':'Y','TAA':'*','TAG':'*','CAT':'H','CAC':'H','CAA':'Q','CAG':'Q',
+                                  'AAT':'N','AAC':'N','AAA':'K','AAG':'K','GAT':'D','GAC':'D','GAA':'E','GAG':'E',
+                                  'TGT':'C','TGC':'C','TGA':'*','TGG':'W','CGT':'R','CGC':'R','CGA':'R','CGG':'R',
+                                  'AGT':'S','AGC':'S','AGA':'R','AGG':'R','GGT':'G','GGC':'G','GGA':'G','GGG':'G'}, frame = 0):
+        triplet = ""
+        newseq = ""
+        for residue_position in range(frame, len(self)):
+            triplet = triplet + self[residue_position].upper()
+            if residue_position % 3 == 2:
+                try:
+                    newseq = newseq + library[triplet]
+                except KeyError:
+                    newseq = newseq + 'X'
+                triplet = ""
+        return newseq
+
+  
+    
 
 
 class GenomeSequence(dict):
@@ -559,20 +635,36 @@ class GenomeSequence(dict):
 
 
 class Genome():
-    """genome class, which contains sequence and annotations"""
-    def __init__(self,genome_sequence = None, annotations = None):
+    """genome class, which contains sequence and annotations. Annotations can be given as annotation_set object, gff3, cegma_gff,
+    blast_csv, or exonerate_output (just set annotation_format)."""
+    def __init__(self,genome_sequence = None, annotations = None, annotation_format = 'annotation_set'):
         if genome_sequence.__class__.__name__ == 'GenomeSequence' or genome_sequence == None:
             self.genome_sequence = genome_sequence
         else:
             self.genome_sequence = GenomeSequence(genome_sequence)
-        self.annotations = annotations
+        if annotations != None:
+            if annotations.__class__.__name__ == "AnotationSet" and annotation_format == 'annotation_set':
+                self.annotations = annotations
+                self.annotations.genome = self
+            elif annotation_format == 'gff3':
+                self.annotations = read_gff3(annotations)
+                self.annotations.genome = self
+            elif annotation_format == 'cegma_gff':
+                self.annotations = read_cegma_gff(annotations)
+                self.annotations.genome = self
+            elif annotation_format == 'blast_csv':
+                self.annotations = read_blast_csv(annotations)
+                self.annotations.genome = self
+            elif annotation_format == 'exonerate_output':
+                self.annotations = read_exonerate(annotations)
+                self.annotations.genome = self
     
     def get_scaffold_fasta(self, seqid):
         return '>' + seqid + '\n' + self.genome_sequence[seqid]
     
     def write_apollo_gff(self, seqid):
         if self.genome_sequence != None and self.annotations != None:
-            return write_to_longform_gff(self.annotations.get_seqid(seqid)) + '\n' + self.get_scaffold_fasta(seqid)
+            return write_longform_gff(self.annotations.get_seqid(seqid)) + '\n' + self.get_scaffold_fasta(seqid)
         else:
             print "genome object is either missing genome_sequence or annotations"
     
