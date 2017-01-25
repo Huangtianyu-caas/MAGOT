@@ -78,6 +78,21 @@ def fqstats(fastq_location):
     print "n75=" + str(n75)
     
     
+def genewise_wrapper(query_file,genome_file,hmm = False):
+    genome = open(genome_file).read().split('>')[1:]
+    if hmm:
+        hmmopt = '-hmmer '
+    else:
+        hmmopt = ''
+    subprocess.call('mkdir temp', shell = True)
+    for sequence in genome:
+        seqid = sequence.split('\n')[0]
+        out = open('temp/' + seqid + '.fa','w')
+        out.write('>'+sequence)
+        out.close()
+        subprocess.call('genewise ' + hmmopt + query_file + ' temp/' + seqid + '.fa > ' + seqid + '.out', shell = True)
+    subprocess.call('cat temp/*.out > genwise.out', shell = True)
+    subprocess.call('rm -r temp', shell = True)
 
 
 
