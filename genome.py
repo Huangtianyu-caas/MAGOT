@@ -602,12 +602,17 @@ class Sequence(str):
                                   'TAT':'Y','TAC':'Y','TAA':'*','TAG':'*','CAT':'H','CAC':'H','CAA':'Q','CAG':'Q',
                                   'AAT':'N','AAC':'N','AAA':'K','AAG':'K','GAT':'D','GAC':'D','GAA':'E','GAG':'E',
                                   'TGT':'C','TGC':'C','TGA':'*','TGG':'W','CGT':'R','CGC':'R','CGA':'R','CGG':'R',
-                                  'AGT':'S','AGC':'S','AGA':'R','AGG':'R','GGT':'G','GGC':'G','GGA':'G','GGG':'G'}, frame = 0):
+                                  'AGT':'S','AGC':'S','AGA':'R','AGG':'R','GGT':'G','GGC':'G','GGA':'G','GGG':'G'},
+                  frame = 0, strand = '+'):
         triplet = ""
         newseq = ""
+        if strand == '+':
+            seq = self
+        elif strand == '-':
+            seq = self.reverse_compliment()
         for residue_position in range(frame, len(self)):
-            triplet = triplet + self[residue_position].upper()
-            if residue_position % 3 == 2:
+            triplet = triplet + seq[residue_position].upper()
+            if (residue_position + frame) % 3 == 2:
                 try:
                     newseq = newseq + library[triplet]
                 except KeyError:
