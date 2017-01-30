@@ -122,8 +122,8 @@ def  dna2orfs(fasta_location,output_file,from_atg = False,longest = False):
                             candidate_list.append('>'+seq+'_longestORF\n'+output_orf+'\n')
                             longest_orf_len = len(output_orf)
                     else:
-                        out.write('>'+seq+'-seq'+str(count)+'\n'+output_orf+'\n')
-                    count=count+1
+                        out.write('>'+seq+'-seq'+str(counter)+'\n'+output_orf+'\n')
+                    counter=counter+1
         if longest:
             out.write(candidate_list[-1])
     out.close()
