@@ -86,16 +86,47 @@ def genewise_wrapper(query_file,genome_file,hmm = False):
         hmmopt = ''
     subprocess.call('mkdir temp', shell = True)
     for sequence in genome:
-        seqid = sequence.split('\n')[0]
+        seqid = sequence.split('\n')[0].split()[0]
         out = open('temp/' + seqid + '.fa','w')
         out.write('>'+sequence)
         out.close()
-        subprocess.call('genewise ' + hmmopt + query_file + ' temp/' + seqid + '.fa > ' + seqid + '.out', shell = True)
+        command = 'genewise ' + hmmopt + query_file + ' temp/' + seqid + '.fa > ' + seqid + '.out'
+        subprocess.call(command, shell = True)
     subprocess.call('cat temp/*.out > genwise.out', shell = True)
     subprocess.call('rm -r temp', shell = True)
 
-
-
+def  dna2orfs(fasta_location,output_file,from_atg = False,longest = False):
+    """takes a dna sequence in fasta format and returns ORFs found therein"""
+    dna = genome.Genome(fasta_location)
+    out = open(output_file, 'w')
+    counter = 0
+    if longest:
+        orf_list = []
+    for seq in dna.genome_sequence:
+        if longest:
+            candidate_list = []
+            longest_orf_len = 0
+        for frame in [0,1,2]:
+            for strand in ['-','+']:
+                translated_seq_list = dna.genome_sequence[seq].translate(frame=frame,strand=strand).split('*')
+                for orf in translated_seq_list:
+                    if from_atg:
+                        try:
+                            output_orf = 'M' + ''.join(orf.split('M')[1:])
+                        except IndexError:
+                            continue
+                    else:
+                        output_orf = orf
+                    if longest:
+                        if len(ouput_orf) > longest_orf_len:
+                            candidate_list.append('>'+seq+'_longestORF\n'+output_orf+'\n')
+                            longest_orf_len = len(output_orf)
+                    else:
+                        out.write('>'+seq+'-seq'+str(count)+'\n'+output_orf+'\n')
+                    count=count+1
+        if longest:
+            out.write(candidate_list[-1])
+    out.close()
 
 
 
