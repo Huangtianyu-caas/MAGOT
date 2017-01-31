@@ -587,7 +587,7 @@ class ParentAnnotation():
                     fasta_list.append('>' + self.ID + '\n' + ''.join(seq_list))
                 else:
                     for child in self.child_list:
-                        fasta_list.append(self.annotation_set[child].get_fasta)
+                        fasta_list.append(self.annotation_set[child].get_fasta())
                 return '\n'.join(fasta_list)
     
 

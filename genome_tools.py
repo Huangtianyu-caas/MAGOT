@@ -12,11 +12,11 @@ config = genome_tools_config
 #debug
 def print_input(*arg):
     subprocess.call(
-"""
-echo """ + '"' + " ".join(arg) + '"',
-shell = True
+    """
+    echo """ + '"' + " ".join(arg) + '"',
+    shell = True
     )
-#/debug
+    #/debug
 
 
 def main():
@@ -94,6 +94,7 @@ def genewise_wrapper(query_file,genome_file,hmm = False):
     subprocess.call('cat temp/*.out > genwise.out', shell = True)
     subprocess.call('rm -r temp', shell = True)
 
+
 def  dna2orfs(fasta_location,output_file,from_atg = False,longest = False):
     """takes a dna sequence in fasta format and returns ORFs found therein"""
     dna = genome.Genome(fasta_location)
@@ -129,8 +130,8 @@ def  dna2orfs(fasta_location,output_file,from_atg = False,longest = False):
 
 
 def prep4apollo(genome_sequence, output_directory = 'apollo_gffs', exon_fasta = None, full_length_seqs = None,
-                               exon_blast_csv = None, exonerate_output = None, other_gff = None, other_gff_format = 'gff3', blast_evalue = '0.01',
-                               exonerate_percent = '50'):
+                               exon_blast_csv = None, exonerate_output = None, other_gff = None, other_gff_format = 'gff3',
+                               blast_evalue = '0.01', exonerate_percent = '50',output_empty_scaffolds = False):
     """takes evidence inputs and returns gff files to open in apollo"""
     subprocess.call("mkdir -p " + output_directory)
     subprocess.call("mkdir -p " + output_directory + "/temp")
@@ -159,16 +160,15 @@ def prep4apollo(genome_sequence, output_directory = 'apollo_gffs', exon_fasta = 
         my_genome.read_blast_csv(exon_blast_csv)
     if exonerate_output != None:
         my_genome.read_exonerate(exonerate_output)
-    for seqid in my_genome.get_seqids():
+    if output_empty_scaffolds:
+        seqids = my_genome.get_seqids()
+    else:
+        seqids = my_genome.annotations.get_all_seqids()
+    for seqid in seqids:
         out = open(output_directory + '/' + seqid + '.gff','w')
         out.write(my_genome.write_apollo_gff(seqid))
         out.close()
     subprocess.call('rm -rf ' + output_directory + '/temp', shell = True)
-    
-        
-
-
-
 
 
 
