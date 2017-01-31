@@ -8,9 +8,6 @@ def apollo2genome(apollo_gff):
     gff3 = apollo_list[0]
     fasta = '>' + apollo_list[1]
     return Genome(fasta,gff3,annotation_format='gff3')
-    
-    pass
-
 
 
 def vulgar2gff(vulgarstring, feature_types=['match','match_part'],source='exonerate'):
@@ -69,7 +66,7 @@ def vulgar2gff(vulgarstring, feature_types=['match','match_part'],source='exoner
                                                        'ID='+qname+'_'+feature_types[1]+str(IDnum)+';Parent='+qname]))
     return '\n'.join(gfflines)
 
-    
+
 def read_exonerate(exonerate_output,annotation_set_to_modify = None):
     if annotation_set_to_modify == None:
         annotation_set = AnnotationSet()
@@ -435,6 +432,16 @@ class AnnotationSet():
                     seqid_list.append(eval('self.' + attribute)[feature].seqid)
         return list(set(seqid_list))
     
+    def read_exonerate(self, exonerate_output):
+        read_exonerate(exonerate_output,annotation_set_to_modify = self)
+    
+    def read_blast_csv(self, blast_csv):
+        read_blast_csv(blast_csv, annotation_set_to_modify = self)
+    
+    def read_cegma_gff(self, cegma_gff):
+        read_cegma_gff(cegma_gff, annotation_set_to_modify = self)
+    
+    
 
 class BaseAnnotation():
     """Bottom-most level annotation on a genome, for example CDS, UTR, Match, etc. Anything that should have no children"""
@@ -669,7 +676,10 @@ class Genome():
     
     def write_apollo_gff(self, seqid):
         if self.genome_sequence != None and self.annotations != None:
-            return write_longform_gff(self.annotations.get_seqid(seqid)) + '\n' + self.get_scaffold_fasta(seqid)
+            try:
+                return write_longform_gff(self.annotations.get_seqid(seqid)) + '\n' + self.get_scaffold_fasta(seqid)
+            except:
+                return self.get_scaffold_fasta(seqid)
         else:
             print "genome object is either missing genome_sequence or annotations"
     
@@ -687,4 +697,26 @@ class Genome():
         if warning:
             print "warning, some annotations possessed seqids not found in sequence dictionary"
         return seqid_list
+    
+    def read_exonerate(self, exonerate_output):
+        if self.annotations != None:
+            self.annotations.read_exonerate(exonerate_output)
+        else:
+            self.annotations = read_exonerate(exonerate_output)
+    
+    def read_blast_csv(self, blast_csv):
+        if self.annotations != None:
+            self.annotations.read_blast_csv(blast_csv)
+        else:
+            self.annotations = read_blast_csv(blast_csv)
+    
+    def read_cegma_gff(self, cegma_gff):
+        if self.annotations != None:
+            self.annotations.read_cegma_gff(cegma_gff)
+        else:
+            self.annotations = read_cegma_gff(cegma_gff)
+    
+    
+    
+    
 

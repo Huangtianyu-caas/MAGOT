@@ -27,13 +27,12 @@ def main():
 
 
 def nucmer_plot(qgenome_file_loc,tgenome_file_loc):
-    subprocess.call(
-"""
-nucmer -l 100 -c 1000 """ + tgenome_file_loc + " " + qgenome_file_loc + """
-dnadif -d out.delta
-mummerplot --small --fat --postscript out.1delta
-ps2pdf out.ps out.pdf""", shell = True
-    )
+    subprocess.call('\n'.join([
+        config.nucmer +" -l 100 -c 1000 " + tgenome_file_loc + " " + qgenome_file_loc,
+        config.dnadif + " -d out.delta",
+        config.mummerplot + " --small --fat --postscript out.1delta",
+        config.ps2pdf + " out.ps out.pdf"
+        ]),shell = True)
 
 
 def fqstats(fastq_location):
@@ -90,7 +89,7 @@ def genewise_wrapper(query_file,genome_file,hmm = False):
         out = open('temp/' + seqid + '.fa','w')
         out.write('>'+sequence)
         out.close()
-        command = 'genewise ' + hmmopt + query_file + ' temp/' + seqid + '.fa > ' + seqid + '.out'
+        command = config.genewise + hmmopt + query_file + ' temp/' + seqid + '.fa > ' + seqid + '.out'
         subprocess.call(command, shell = True)
     subprocess.call('cat temp/*.out > genwise.out', shell = True)
     subprocess.call('rm -r temp', shell = True)
@@ -129,6 +128,44 @@ def  dna2orfs(fasta_location,output_file,from_atg = False,longest = False):
     out.close()
 
 
+def prep4apollo(genome_sequence, output_directory = 'apollo_gffs', exon_fasta = None, full_length_seqs = None,
+                               exon_blast_csv = None, exonerate_output = None, other_gff = None, other_gff_format = 'gff3', blast_evalue = '0.01',
+                               exonerate_percent = '50'):
+    """takes evidence inputs and returns gff files to open in apollo"""
+    subprocess.call("mkdir -p " + output_directory)
+    subprocess.call("mkdir -p " + output_directory + "/temp")
+    if exon_fasta != None:
+        subprocess.call(config.makeblastdb + ' -in ' + genome_sequence + ' -out ' + output_directory
+                        + '/temp/tempdb -dbtype nucl', shell = True)
+        subprocess.call(config.tblastn + ' -query ' + exon_fasta + ' -db ' + output_directory + '/temp/tempdb -evalue '
+                        + blast_evalue + " -out " + output_directory + "/exon_tblastn.csv -outfmt 10", shell = True)
+        if exon_blast_csv != None:
+            subprocess.call('cat ' + exon_blast_csv + ' ' + output_directory + '/exon_tblastn.csv > ' + output_directory
+                            + '/cat_exon_tblastn.csv', shell = True)
+            exon_blast_csv = output_directory + '/cat_exon_tblastn.csv'
+        else:
+            exon_blast_csv = output_directory + '/exon_tblastn.csv'
+    if full_length_seqs != None:
+        subprocess.call(config.exonerate + ' --model protein2genome --percent ' + exonerate_percent + ' ' + full_length_seqs
+                        + ' ' + genome_sequence + ' > ' + output_directory + '/exonerate_output.txt', shell = True)
+        if exonerate_output != None:
+            subprocess.call('cat ' + exonerate_output + ' ' + output_directory + '/exonerate_output.txt > ' + output_directory
+                            + '/cat_exonerate_output.txt', shell = True)
+            exonerate_output = output_directory + '/cat_exonerate_output.txt'
+        else:
+            exonerate_output = output_directory + '/exonerate_output.txt'
+    my_genome = genome.Genome(genome_sequence,other_gff,annotation_format = other_gff_format)
+    if exon_blast_csv != None:
+        my_genome.read_blast_csv(exon_blast_csv)
+    if exonerate_output != None:
+        my_genome.read_exonerate(exonerate_output)
+    for seqid in my_genome.get_seqids():
+        out = open(output_directory + '/' + seqid + '.gff','w')
+        out.write(my_genome.write_apollo_gff(seqid))
+        out.close()
+    subprocess.call('rm -rf ' + output_directory + '/temp', shell = True)
+    
+        
 
 
 
