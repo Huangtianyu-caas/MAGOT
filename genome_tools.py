@@ -22,7 +22,17 @@ def print_input(*arg):
 def main():
     program = sys.argv[1]
     arguments = sys.argv[2:]
-    command = program + "('" + "','".join(arguments) + "')"
+    command = program + "("
+    for argument in arguments:
+        if '=' in argument:
+            argsplit = argument.split('=')
+            command = command + argsplit[0] + '="'+ argsplit[1] +'",'
+        else:
+            command = command + '"' + argument + '",'
+    if command[-1] == ',':
+        command = command[:-1] + ')'
+    else:
+        command = command + ')'    
     eval(command)
 
 
@@ -118,7 +128,7 @@ def  dna2orfs(fasta_location,output_file,from_atg = False,longest = False):
                     else:
                         output_orf = orf
                     if longest:
-                        if len(ouput_orf) > longest_orf_len:
+                        if len(output_orf) > longest_orf_len:
                             candidate_list.append('>'+seq+'_longestORF\n'+output_orf+'\n')
                             longest_orf_len = len(output_orf)
                     else:
@@ -170,6 +180,47 @@ def prep4apollo(genome_sequence, output_directory = 'apollo_gffs', exon_fasta = 
         out.close()
     subprocess.call('rm -rf ' + output_directory + '/temp', shell = True)
 
+
+def get_CDS_peptides(genome_sequence,gff,output_location,gene_name_filters = [], gene_length_filter = None, names_from = "CDS"):
+    my_genome = genome.Genome(genome_sequence,gff,annotation_format = 'gff3')
+    out = open(output_location,'w')
+    for gene in my_genome.annotations.gene:
+        gene_obj = my_genome.annotations.gene[gene]
+        keepgene = True
+        for name_filter in gene_name_filters:
+            if name_filter in gene_obj.ID:
+                keepgene = False
+        if gene_length_filter != None:
+            seqlen = len(gene_obj.get_fasta().split('\n')[1])
+            if seqlen < int(gene_length_filter):
+                keepgene = False
+        if keepgene:
+            for transcript in gene_obj.child_list:
+                CDSdict = {}
+                transcript_obj = my_genome.annotations.transcript[transcript]
+                for CDS in transcript_obj.child_list:
+                    CDS_obj = my_genome.annotations.CDS[CDS]
+                    CDSdict[CDS_obj.coords] = (CDS_obj.ID,CDS_obj.get_seq().get_orfs(longest = True))
+                CDSlist = list(CDSdict)
+                CDSlist.sort()
+                if transcript_obj.strand == "-":
+                    CDSlist.reverse()
+                counter = 1
+                for CDS in CDSlist:
+                    if names_from == 'CDS':
+                        pep_name = CDSdict[CDS][0]
+                    elif names_from == 'transcript':
+                        pep_name = transcript_obj.ID + '-CDS' + str(counter)
+                        counter = counter + 1
+                    elif names_from == 'gene':
+                        pep_name = gene_obj.ID + '-CDS' + str(counter)
+                        counter = counter + 1
+                    else:
+                        print "invalid option for 'names_from' argument"
+                        break
+                    out.write('>' + pep_name + '\n' + CDSdict[CDS][1] + '\n')
+
+    
 
 
 

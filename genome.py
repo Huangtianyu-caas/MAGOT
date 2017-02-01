@@ -529,6 +529,8 @@ class BaseAnnotation():
         except:
             print "either base_annotation has not annotation_set, or annotation_set has no genome, or genome has no\
             genome sequence, or genome sequence has no matching seqid, or coords are out of range on that seqid"
+            
+            
     
 
 
@@ -599,8 +601,11 @@ class Sequence(str):
         new_sequence_list = []
         compliment_dict = {'a':'t','t':'a','g':'c','c':'g','A':'T','T':'A','G':'C','C':'G','n':'n','N':'N','-':'-'}
         for residue in self[::-1]:
-            new_sequence_list.append(compliment_dict[residue])
-        return ''.join(new_sequence_list)
+            try:
+                new_sequence_list.append(compliment_dict[residue])
+            except KeyError:
+                new_sequence_list.append('n')
+        return Sequence(''.join(new_sequence_list))
     
     def translate(self,library = {'TTT':'F','TTC':'F','TTA':'L','TTG':'L','CTT':'L','CTC':'L','CTA':'L','CTG':'L',
                                   'ATT':'I','ATC':'I','ATA':'I','ATG':'M','GTT':'V','GTC':'V','GTA':'V','GTG':'V',
@@ -610,7 +615,7 @@ class Sequence(str):
                                   'AAT':'N','AAC':'N','AAA':'K','AAG':'K','GAT':'D','GAC':'D','GAA':'E','GAG':'E',
                                   'TGT':'C','TGC':'C','TGA':'*','TGG':'W','CGT':'R','CGC':'R','CGA':'R','CGG':'R',
                                   'AGT':'S','AGC':'S','AGA':'R','AGG':'R','GGT':'G','GGC':'G','GGA':'G','GGG':'G'},
-                  frame = 0, strand = '+'):
+                  frame = 0, strand = '+',trimX = True):
         triplet = ""
         newseq = ""
         if strand == '+':
@@ -625,7 +630,38 @@ class Sequence(str):
                 except KeyError:
                     newseq = newseq + 'X'
                 triplet = ""
+        if trimX:
+            if newseq[0] == 'X':
+                newseq = newseq[1:]
         return newseq
+    
+    def get_orfs(self, longest = False, strand = 'both', from_atg = False):
+        orflist = []
+        if longest:
+            candidate_list = []
+            longest_orf_len = 0
+        for frame in [0,1,2]:
+            for strand in ['-','+']:
+                translated_seq_list = self.translate(frame=frame,strand=strand).split('*')
+                for orf in translated_seq_list:
+                    if from_atg:
+                        try:
+                            output_orf = 'M' + ''.join(orf.split('M')[1:])
+                        except IndexError:
+                            continue
+                    else:
+                        output_orf = orf
+                    if longest:
+                        if len(output_orf) > longest_orf_len:
+                            candidate_list.append(output_orf)
+                            longest_orf_len = len(output_orf)
+                    else:
+                        orflist.append(output_orf)
+        if longest:
+            return candidate_list[-1]
+        else:
+            return orflist
+    
 
   
     
