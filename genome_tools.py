@@ -141,7 +141,7 @@ def  dna2orfs(fasta_location,output_file,from_atg = False,longest = False):
 
 def prep4apollo(genome_sequence, output_directory = 'apollo_gffs', exon_fasta = None, full_length_seqs = None,
                                exon_blast_csv = None, exonerate_output = None, other_gff = None, other_gff_format = 'gff3',
-                               blast_evalue = '0.01', exonerate_percent = '50',output_empty_scaffolds = False):
+                               blast_evalue = '0.01', exonerate_percent = '50',output_empty_scaffolds = False, exonerate_intron_steps="2000,5000,200000"):
     """takes evidence inputs and returns gff files to open in apollo"""
     subprocess.call("mkdir -p " + output_directory)
     subprocess.call("mkdir -p " + output_directory + "/temp")
@@ -157,14 +157,17 @@ def prep4apollo(genome_sequence, output_directory = 'apollo_gffs', exon_fasta = 
         else:
             exon_blast_csv = output_directory + '/exon_tblastn.csv'
     if full_length_seqs != None:
-        subprocess.call(config.exonerate + ' --model protein2genome --percent ' + exonerate_percent + ' ' + full_length_seqs
-                        + ' ' + genome_sequence + ' > ' + output_directory + '/exonerate_output.txt', shell = True)
+        exonerate_intron_lengths = exonerate_intron_steps.split(',')
+        for intron_length in exonerate_intron_lengths:        
+            subprocess.call(config.exonerate + ' --model protein2genome --percent ' + exonerate_percent + ' --maxintron'
+                            + intron_length + ' ' + full_length_seqs + ' ' + genome_sequence + ' > ' + output_directory
+                            + '/exonerate_output_' + intron_length + 'bp_introns.txt', shell = True)
         if exonerate_output != None:
-            subprocess.call('cat ' + exonerate_output + ' ' + output_directory + '/exonerate_output.txt > ' + output_directory
+            subprocess.call('cat ' + exonerate_output + ' ' + output_directory + '/exonerate_output* > ' + output_directory
                             + '/cat_exonerate_output.txt', shell = True)
-            exonerate_output = output_directory + '/cat_exonerate_output.txt'
         else:
-            exonerate_output = output_directory + '/exonerate_output.txt'
+            subprocess.call('cat ' + output_directory + '/exonerate_ouput* > ' + output_directory + '/cat_exonerate_output.txt', shell = True)
+        exonerate_output = output_directory + '/cat_exonerate_output.txt'
     my_genome = genome.Genome(genome_sequence,other_gff,annotation_format = other_gff_format)
     if exon_blast_csv != None:
         my_genome.read_blast_csv(exon_blast_csv)
