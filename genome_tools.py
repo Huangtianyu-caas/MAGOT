@@ -143,8 +143,8 @@ def prep4apollo(genome_sequence, output_directory = 'apollo_gffs', exon_fasta = 
                                exon_blast_csv = None, exonerate_output = None, other_gff = None, other_gff_format = 'gff3',
                                blast_evalue = '0.01', exonerate_percent = '50',output_empty_scaffolds = False, exonerate_intron_steps="2000,5000,200000"):
     """takes evidence inputs and returns gff files to open in apollo"""
-    subprocess.call("mkdir -p " + output_directory)
-    subprocess.call("mkdir -p " + output_directory + "/temp")
+    subprocess.call("mkdir -p " + output_directory, shell = True)
+    subprocess.call("mkdir -p " + output_directory + "/temp", shell = True)
     if exon_fasta != None:
         subprocess.call(config.makeblastdb + ' -in ' + genome_sequence + ' -out ' + output_directory
                         + '/temp/tempdb -dbtype nucl', shell = True)
