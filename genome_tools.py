@@ -146,6 +146,7 @@ def prep4apollo(genome_sequence, output_directory = 'apollo_gffs', exon_fasta = 
     subprocess.call("mkdir -p " + output_directory, shell = True)
     subprocess.call("mkdir -p " + output_directory + "/temp", shell = True)
     if exon_fasta != None:
+        print "Running tblastn to map exons from exon_fasta to genome"
         subprocess.call(config.makeblastdb + ' -in ' + genome_sequence + ' -out ' + output_directory
                         + '/temp/tempdb -dbtype nucl', shell = True)
         subprocess.call(config.tblastn + ' -query ' + exon_fasta + ' -db ' + output_directory + '/temp/tempdb -evalue '
@@ -157,9 +158,10 @@ def prep4apollo(genome_sequence, output_directory = 'apollo_gffs', exon_fasta = 
         else:
             exon_blast_csv = output_directory + '/exon_tblastn.csv'
     if full_length_seqs != None:
+        print "Running exonerate to map full sequences to genome"
         exonerate_intron_lengths = exonerate_intron_steps.split(',')
         for intron_length in exonerate_intron_lengths:        
-            subprocess.call(config.exonerate + ' --model protein2genome --percent ' + exonerate_percent + ' --maxintron'
+            subprocess.call(config.exonerate + ' --model protein2genome --percent ' + exonerate_percent + ' --maxintron '
                             + intron_length + ' ' + full_length_seqs + ' ' + genome_sequence + ' > ' + output_directory
                             + '/exonerate_output_' + intron_length + 'bp_introns.txt', shell = True)
         if exonerate_output != None:
@@ -168,6 +170,7 @@ def prep4apollo(genome_sequence, output_directory = 'apollo_gffs', exon_fasta = 
         else:
             subprocess.call('cat ' + output_directory + '/exonerate_ouput* > ' + output_directory + '/cat_exonerate_output.txt', shell = True)
         exonerate_output = output_directory + '/cat_exonerate_output.txt'
+    print "building apollo gffs"
     my_genome = genome.Genome(genome_sequence,other_gff,annotation_format = other_gff_format)
     if exon_blast_csv != None:
         my_genome.read_blast_csv(exon_blast_csv)
