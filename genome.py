@@ -706,6 +706,8 @@ class Genome():
             elif annotation_format == 'exonerate_output':
                 self.annotations = read_exonerate(annotations)
                 self.annotations.genome = self
+        else:
+            self.annotations = annotations
     
     def get_scaffold_fasta(self, seqid):
         return '>' + seqid + '\n' + self.genome_sequence[seqid]
