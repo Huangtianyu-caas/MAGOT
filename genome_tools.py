@@ -109,7 +109,6 @@ def  dna2orfs(fasta_location,output_file,from_atg = False,longest = False):
     """takes a dna sequence in fasta format and returns ORFs found therein"""
     dna = genome.Genome(fasta_location)
     out = open(output_file, 'w')
-    counter = 0
     if longest:
         orf_list = []
     for seq in dna.genome_sequence:
@@ -119,7 +118,13 @@ def  dna2orfs(fasta_location,output_file,from_atg = False,longest = False):
         for frame in [0,1,2]:
             for strand in ['-','+']:
                 translated_seq_list = dna.genome_sequence[seq].translate(frame=frame,strand=strand).split('*')
+                if strand == '+':
+                    length_list = [frame] #populates with lengths of orfs so that I can trace back orf positions
+                else:
+                    length_list = [len(dna.genome_sequence[seq]) - frame]
                 for orf in translated_seq_list:
+                    orf_start = sum(length_list)
+                    length_list.append((1 + len(orf)) * 3)
                     if from_atg:
                         try:
                             output_orf = 'M' + ''.join(orf.split('M')[1:])
@@ -132,8 +137,7 @@ def  dna2orfs(fasta_location,output_file,from_atg = False,longest = False):
                             candidate_list.append('>'+seq+'_longestORF\n'+output_orf+'\n')
                             longest_orf_len = len(output_orf)
                     else:
-                        out.write('>'+seq+'-seq'+str(counter)+'\n'+output_orf+'\n')
-                    counter=counter+1
+                        out.write('>'+seq+'-pos:'+str(orfstart)+'\n'+output_orf+'\n')
         if longest:
             out.write(candidate_list[-1])
     out.close()
@@ -168,10 +172,12 @@ def prep4apollo(genome_sequence, output_directory = 'apollo_gffs', exon_fasta = 
             subprocess.call('cat ' + exonerate_output + ' ' + output_directory + '/exonerate_output* > ' + output_directory
                             + '/cat_exonerate_output.txt', shell = True)
         else:
-            subprocess.call('cat ' + output_directory + '/exonerate_ouput* > ' + output_directory + '/cat_exonerate_output.txt', shell = True)
+            subprocess.call('cat ' + output_directory + '/exonerate_output* > ' + output_directory + '/cat_exonerate_output.txt', shell = True)
         exonerate_output = output_directory + '/cat_exonerate_output.txt'
     print "building apollo gffs"
     my_genome = genome.Genome(genome_sequence,other_gff,annotation_format = other_gff_format)
+    print other_gff
+    print my_genome.annotations
     if exon_blast_csv != None:
         my_genome.read_blast_csv(exon_blast_csv)
     if exonerate_output != None:
