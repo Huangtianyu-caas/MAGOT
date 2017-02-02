@@ -359,31 +359,32 @@ def read_blast_csv(blast_csv,annotation_set_to_modify = None,hierarchy = ['match
         setattr(annotation_set, feature_type, {})
     for line in blast_lines:
         fields = line.split(',')
-        seqid = fields[1]
-        tstart = int(fields[8])
-        tend = int(fields[9])
-        if tstart < tend:
-            coords = (tstart,tend)
-            strand = '+'
-        else:
-            coords = (tend,tstart)
-            strand = '-'
-        score = fields[11]
-        IDbase = fields[0]
-        if IDbase in eval('annotation_set.' + feature_type):
-            ID = IDbase + '-' + str(id_generator_dict[IDbase])
-            id_generator_dict[IDbase] = id_generator_dict[IDbase] + 1
-            while ID in eval('annotation_set.' + feature_type):
+        if len(fields) > 8:
+            seqid = fields[1]
+            tstart = int(fields[8])
+            tend = int(fields[9])
+            if tstart < tend:
+                coords = (tstart,tend)
+                strand = '+'
+            else:
+                coords = (tend,tstart)
+                strand = '-'
+            score = fields[11]
+            IDbase = fields[0]
+            if IDbase in eval('annotation_set.' + feature_type):
                 ID = IDbase + '-' + str(id_generator_dict[IDbase])
                 id_generator_dict[IDbase] = id_generator_dict[IDbase] + 1
-        else:
-            ID = IDbase
-            id_generator_dict[IDbase] = 1
-        other_attributes = {}
-        other_attributes['evalue'] = fields[10]
-        parent = ID + '-match'
-        eval('annotation_set.' + feature_type)[ID] = BaseAnnotation(ID, seqid, coords, feature_type, parent, other_attributes,
-                                                                    annotation_set, create_parents_chain)
+                while ID in eval('annotation_set.' + feature_type):
+                    ID = IDbase + '-' + str(id_generator_dict[IDbase])
+                    id_generator_dict[IDbase] = id_generator_dict[IDbase] + 1
+            else:
+                ID = IDbase
+                id_generator_dict[IDbase] = 1
+            other_attributes = {}
+            other_attributes['evalue'] = fields[10]
+            parent = ID + '-match'
+            eval('annotation_set.' + feature_type)[ID] = BaseAnnotation(ID, seqid, coords, feature_type, parent, other_attributes,
+                                                                        annotation_set, create_parents_chain)
     if annotation_set_to_modify == None:
         return annotation_set
 
