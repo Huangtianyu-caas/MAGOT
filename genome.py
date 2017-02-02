@@ -530,9 +530,6 @@ class BaseAnnotation():
         except:
             print "either base_annotation has not annotation_set, or annotation_set has no genome, or genome has no\
             genome sequence, or genome sequence has no matching seqid, or coords are out of range on that seqid"
-            
-            
-    
 
 
 class ParentAnnotation():
@@ -742,18 +739,21 @@ class Genome():
             self.annotations.read_exonerate(exonerate_output)
         else:
             self.annotations = read_exonerate(exonerate_output)
+            self.annotations.genome = self
     
     def read_blast_csv(self, blast_csv):
         if self.annotations != None:
             self.annotations.read_blast_csv(blast_csv)
         else:
             self.annotations = read_blast_csv(blast_csv)
+            self.annotations.genome = self
     
     def read_cegma_gff(self, cegma_gff):
         if self.annotations != None:
             self.annotations.read_cegma_gff(cegma_gff)
         else:
             self.annotations = read_cegma_gff(cegma_gff)
+            self.annotations.genome = self
     
     
     

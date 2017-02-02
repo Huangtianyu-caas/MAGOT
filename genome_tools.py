@@ -9,6 +9,11 @@ import subprocess
 
 config = genome_tools_config
 
+
+def sanitize_pathname(pathname):
+    return pathname.replace('|','').replace('<','').replace('>','').replace(':','').replace(';','')
+
+
 #debug
 def print_input(*arg):
     subprocess.call(
@@ -176,8 +181,6 @@ def prep4apollo(genome_sequence, output_directory = 'apollo_gffs', exon_fasta = 
         exonerate_output = output_directory + '/cat_exonerate_output.txt'
     print "building apollo gffs"
     my_genome = genome.Genome(genome_sequence,other_gff,annotation_format = other_gff_format)
-    print other_gff
-    print my_genome.annotations
     if exon_blast_csv != None:
         my_genome.read_blast_csv(exon_blast_csv)
     if exonerate_output != None:
@@ -187,7 +190,7 @@ def prep4apollo(genome_sequence, output_directory = 'apollo_gffs', exon_fasta = 
     else:
         seqids = my_genome.annotations.get_all_seqids()
     for seqid in seqids:
-        out = open(output_directory + '/' + seqid + '.gff','w')
+        out = open(output_directory + '/' + sanitize_pathname(seqid) + '.gff','w')
         out.write(my_genome.write_apollo_gff(seqid))
         out.close()
     subprocess.call('rm -rf ' + output_directory + '/temp', shell = True)
