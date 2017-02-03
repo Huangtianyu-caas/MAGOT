@@ -196,6 +196,17 @@ def prep4apollo(genome_sequence, output_directory = 'apollo_gffs', exon_fasta = 
     subprocess.call('rm -rf ' + output_directory + '/temp', shell = True)
 
 
+def blast_csv2fasta(genome_sequence,blast_csv):
+    my_genome = genome.Genome(genome_sequence)
+    my_genome.read_blast_csv(blast_csv)
+    outfasta = []
+    for match in my_genome.annotations.match:
+        outfasta.append(my_genome.annotations.match[match].get_fasta())
+    print '\n'.join(outfasta)
+    
+
+
+
 def get_CDS_peptides(genome_sequence,gff,output_location,gene_name_filters = [], gene_length_filter = None, names_from = "CDS"):
     my_genome = genome.Genome(genome_sequence,gff,annotation_format = 'gff3')
     out = open(output_location,'w')
