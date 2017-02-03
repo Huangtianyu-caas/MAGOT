@@ -80,7 +80,7 @@ def read_exonerate(exonerate_output,annotation_set_to_modify = None):
         if line[:16] == "         Query: ":
             qname = line[16:]
         elif line[:16] == "        Target: ":
-            tname = line[16:].replace(':[revcomp]','')
+            tname = line[16:].replace(':[revcomp]','').replace('[revcomp]','')
         elif line[:8] == "vulgar: ":
             vulgar_line_list = line[8:].split()
             #trying to makesure IDs are unique
