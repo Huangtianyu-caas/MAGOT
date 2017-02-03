@@ -14,7 +14,7 @@ def vulgar2gff(vulgarstring, feature_types=['match','match_part'],source='exoner
     """takes vulgar alignment string and outputs gff lines. For eventual use with a read_exonerate function"""
     #sets variables to be added to gff lines
     vulgarlist = vulgarstring.split()
-    qname = vulgarlist[0]
+    qname = vulgarlist[0] + '-against-' + vulgarlist[4]
     qstart = vulgarlist[1]
     qend = vulgarlist[2]
     qstrand = vulgarlist[3]
@@ -74,11 +74,18 @@ def read_exonerate(exonerate_output,annotation_set_to_modify = None):
         annotation_set = annotation_set_to_modify
     exonerate_lines = read_to_string(exonerate_output).split('\n')
     gfflines = []
+    IDdic = {}
     for line in exonerate_lines:
         if line[:8] == "vulgar: ":
             vulgar_line_list = line[8:].split()
             #trying to makesure IDs are unique
-            gfflines.append(vulgar2gff(line[8:]))
+            ID = vulgar_line_list[0] + '-against-' + vulgar_line_list[4]
+            if ID in IDdic:
+                vulgar_line_list[4] = vulgar_line_list[4] + IDdic[ID]
+                IDdic[ID] = IDdic[ID] + 1
+            else:
+                IDdic[ID] = 1
+            gfflines.append(vulgar2gff(" ".join(vulgar_line_list)))
     read_gff3("\n".join(gfflines), annotation_set_to_modify = annotation_set)
     if annotation_set_to_modify == None:
         return annotation_set

@@ -204,6 +204,13 @@ def blast_csv2fasta(genome_sequence,blast_csv):
         outfasta.append(my_genome.annotations.match[match].get_fasta())
     print '\n'.join(outfasta)
     
+def exonerate2fasta(genome_sequence,exonerate_file):
+    my_genome = genome.Genome(genome_sequence)
+    my_genome.read_exonerate(exonerate_file)
+    outfasta = []
+    for match in my_genome.annotations.match:
+        outfasta.append(my_genome.annotations.match[match].get_fasta())
+    print '\n'.join(outfasta)
 
 
 
