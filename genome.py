@@ -384,9 +384,10 @@ def read_blast_csv(blast_csv,annotation_set_to_modify = None,hierarchy = ['match
                 id_generator_dict[IDbase] = 1
             other_attributes = {}
             other_attributes['evalue'] = fields[10]
+            other_attributes['strand'] = strand
             parent = ID + '-match'
             eval('annotation_set.' + feature_type)[ID] = BaseAnnotation(ID, seqid, coords, feature_type, parent, other_attributes,
-                                                                        annotation_set, create_parents_chain, strand = strand)
+                                                                        annotation_set, create_parents_chain)
     if annotation_set_to_modify == None:
         return annotation_set
 
