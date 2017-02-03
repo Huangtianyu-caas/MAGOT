@@ -10,10 +10,9 @@ def apollo2genome(apollo_gff):
     return Genome(fasta,gff3,annotation_format='gff3')
 
 
-def vulgar2gff(vulgarstring, feature_types=['match','match_part'],source='exonerate'):
-    """takes vulgar alignment string and outputs gff lines. For eventual use with a read_exonerate function"""
+def vulgar2gff(vulgarlist, feature_types=['match','match_part'],source='exonerate'):
+    """takes vulgar alignment list (e.g. vulgarstring.split() ) and outputs gff lines. For eventual use with a read_exonerate function"""
     #sets variables to be added to gff lines
-    vulgarlist = vulgarstring.split()
     qname = vulgarlist[0] + '-against-' + vulgarlist[4]
     qstart = vulgarlist[1]
     qend = vulgarlist[2]
@@ -75,17 +74,25 @@ def read_exonerate(exonerate_output,annotation_set_to_modify = None):
     exonerate_lines = read_to_string(exonerate_output).split('\n')
     gfflines = []
     IDdic = {}
+    qname = ""
+    tname = ""
     for line in exonerate_lines:
-        if line[:8] == "vulgar: ":
+        if line[:16] == "         Query: ":
+            qname = line[16:]
+        elif line[:16] == "        Target: ":
+            tname = line[16:].replace(':[revcomp]','')
+        elif line[:8] == "vulgar: ":
             vulgar_line_list = line[8:].split()
             #trying to makesure IDs are unique
+            vulgar_line_list[0] = qname
+            vulgar_line_list[4] = tname
             ID = vulgar_line_list[0] + '-against-' + vulgar_line_list[4]
             if ID in IDdic:
-                vulgar_line_list[4] = vulgar_line_list[4] + str(IDdic[ID])
+                vulgar_line_list[0] = vulgar_line_list[0] + str(IDdic[ID])
                 IDdic[ID] = IDdic[ID] + 1
             else:
                 IDdic[ID] = 1
-            gfflines.append(vulgar2gff(" ".join(vulgar_line_list)))
+            gfflines.append(vulgar2gff(vulgar_line_list))
     read_gff3("\n".join(gfflines), annotation_set_to_modify = annotation_set)
     if annotation_set_to_modify == None:
         return annotation_set
@@ -540,6 +547,7 @@ class BaseAnnotation():
         except:
             print "either base_annotation has not annotation_set, or annotation_set has no genome, or genome has no\
             genome sequence, or genome sequence has no matching seqid, or coords are out of range on that seqid"
+            print self.seqid
 
 
 class ParentAnnotation():
