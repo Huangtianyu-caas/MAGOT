@@ -81,7 +81,7 @@ def read_exonerate(exonerate_output,annotation_set_to_modify = None):
             #trying to makesure IDs are unique
             ID = vulgar_line_list[0] + '-against-' + vulgar_line_list[4]
             if ID in IDdic:
-                vulgar_line_list[4] = vulgar_line_list[4] + IDdic[ID]
+                vulgar_line_list[4] = vulgar_line_list[4] + str(IDdic[ID])
                 IDdic[ID] = IDdic[ID] + 1
             else:
                 IDdic[ID] = 1
