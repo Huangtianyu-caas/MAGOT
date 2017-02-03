@@ -76,6 +76,8 @@ def read_exonerate(exonerate_output,annotation_set_to_modify = None):
     gfflines = []
     for line in exonerate_lines:
         if line[:8] == "vulgar: ":
+            vulgar_line_list = line[8:].split()
+            #trying to makesure IDs are unique
             gfflines.append(vulgar2gff(line[8:]))
     read_gff3("\n".join(gfflines), annotation_set_to_modify = annotation_set)
     if annotation_set_to_modify == None:
@@ -384,7 +386,7 @@ def read_blast_csv(blast_csv,annotation_set_to_modify = None,hierarchy = ['match
             other_attributes['evalue'] = fields[10]
             parent = ID + '-match'
             eval('annotation_set.' + feature_type)[ID] = BaseAnnotation(ID, seqid, coords, feature_type, parent, other_attributes,
-                                                                        annotation_set, create_parents_chain)
+                                                                        annotation_set, create_parents_chain, strand = strand)
     if annotation_set_to_modify == None:
         return annotation_set
 
