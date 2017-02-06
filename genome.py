@@ -493,6 +493,11 @@ class BaseAnnotation():
                 annotation_set.__dict__[create_parents_chain[0]][parent].child_list.append(ID)
             #Executes parent creation process if parent needs to be created
             else:
+                #checks for strand in base annotation attributes since this needs to be passed up to parents
+                if 'strand' in self.__dict__:
+                    other_attributes = {'strand':self.strand}
+                else:
+                    other_attributes = {}
                 #sets up hierarchy for parent creation
                 hierarchy = {feature_type: create_parents_chain[0]}
                 for feature_index in range(len(create_parents_chain))[:-1]:
@@ -522,7 +527,7 @@ class BaseAnnotation():
                                                                                                                      feature_type = hierarchy[active_feature_type],
                                                                                                                      child_list = [active_feature_ID],
                                                                                                                      parent = next_level_parent,
-                                                                                                                     annotation_set = annotation_set)
+                                                                                                                     annotation_set = annotation_set, other_attributes = other_attributes)
                         #resets active feature type and ID
                         active_feature_type = hierarchy[active_feature_type]
                         active_feature_ID = parent_to_create
@@ -536,7 +541,7 @@ class BaseAnnotation():
                         annotation_set.__dict__[hierarchy[active_feature_type]][parent] = ParentAnnotation(ID = parent, seqid = seqid,
                                                                                                        feature_type = hierarchy[active_feature_type],
                                                                                                        child_list = [active_feature_ID],parent = None,
-                                                                                                       annotation_set = annotation_set)
+                                                                                                       annotation_set = annotation_set, other_attributes = other_attributes)
     def get_coords(self):
         return self.coords
     
