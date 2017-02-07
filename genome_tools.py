@@ -44,7 +44,7 @@ def main():
 def nucmer_plot(qgenome_file_loc,tgenome_file_loc):
     subprocess.call('\n'.join([
         config.nucmer +" -l 100 -c 1000 " + tgenome_file_loc + " " + qgenome_file_loc,
-        config.dnadif + " -d out.delta",
+        config.dnadiff + " -d out.delta",
         config.mummerplot + " --small --fat --postscript out.1delta",
         config.ps2pdf + " out.ps out.pdf"
         ]),shell = True)
@@ -142,7 +142,7 @@ def  dna2orfs(fasta_location,output_file,from_atg = False,longest = False):
                             candidate_list.append('>'+seq+'_longestORF\n'+output_orf+'\n')
                             longest_orf_len = len(output_orf)
                     else:
-                        out.write('>'+seq+'-pos:'+str(orfstart)+'\n'+output_orf+'\n')
+                        out.write('>'+seq+'-pos:'+str(orf_start)+'\n'+output_orf+'\n')
         if longest:
             out.write(candidate_list[-1])
     out.close()

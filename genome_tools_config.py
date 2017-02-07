@@ -5,6 +5,6 @@ tblastn = 'tblastn'
 exonerate = 'exonerate'
 genewise = 'genewise'
 nucmer = "nucmer"
-dnadif = "dnadif"
+dnadiff = "dnadiff"
 mummerplot = "mummerplot"
 ps2pdf = "ps2pdf"
