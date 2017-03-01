@@ -1,4 +1,5 @@
-# GenomePy ![alt tag](https://github.com/biorover/GenomePy/blob/master/GenomePyLogo75p.png)
+![alt tag](https://github.com/biorover/GenomePy/blob/master/GenomePyLogo75p.png) 
+# GenomePy
 
 A functional and simple python library for genomics
 
