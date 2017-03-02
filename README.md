@@ -7,10 +7,13 @@ This project has two principle components: The genome module, which contains man
 
 ##Installation
 Dependancies: Obviously, this program requires python (V2.7). I've tried to use only the most common/default modules- currently just sys, subprocess, and copy. Additionally many tools within genome_tools.py script require other programs and some are essentially just wrappers for other programs. A list of tools:dependancies is below (hopefully up to date, this thing changes pretty fast right now).
-     nucmer_plot: Mummer and associated executables nucmer, dnadiff, and mummerplot; ps2pdf
-     genewise_wrapper: genewise (note, this must be configured properly- at least the default ubuntu apt-get install DOES NOT WORK.
-         please make sure that genewise works by itself before filing a bug here)
-     prep4apollo: Depending on how you use this tool, this requires blast (and associated executables makeblastdb and tblastn) and exonerate
+
+--nucmer_plot: Mummer and associated executables nucmer, dnadiff, and mummerplot; ps2pdf
+     
+--genewise_wrapper: genewise (note, this must be configured properly- at least the default ubuntu apt-get install DOES NOT WORK.
+ please make sure that genewise works by itself before filing a bug here)
+     
+--prep4apollo: Depending on how you use this tool, this requires blast (and associated executables makeblastdb and tblastn) and exonerate
 
 Installation: Download/copy all three python modules (genome.py, genome_tools.py, and genome_tools_config.py) to the same directory. If the dependency executables aren't in your $PATH environment variable (i.e. they don't run from the terminal just by typing the executable name), open genome_tools_config.py in a text editor and set the paths to each executable accordingly. If you want to be able to use the genome.py library within python, either copy all three modules to your python library folder or add the directory containing all three modules to your $PYTHONPATH environment variable (in Linux/Unix, either type into the terminal "export PYTHONPATH=$PYTHONPATH;{path to directory containing all three modules}" at the beggining of each terminal session or add this line to your bash profile).
 
