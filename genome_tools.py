@@ -183,7 +183,7 @@ def prep4apollo(genome_sequence, suppress_fasta = "False", output_directory = 'a
             print "mapping full length sequences with exonerate"
     for cmd_index in range(len(mapping_cmds)):
         running_cmds.append(subprocess.Popen(mapping_cmds[cmd_index],shell = True))
-        if (cmd_index + 1) % int(mapping_threads) == 0:
+        if (cmd_index + 1) % int(mapping_threads) == 0 or cmd_index == len(mapping_cmds):
             for cmd in running_cmds:
                 cmd.wait()
             running_cmds = []
