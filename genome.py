@@ -735,12 +735,18 @@ class Genome():
     def get_scaffold_fasta(self, seqid):
         return '>' + seqid + '\n' + self.genome_sequence[seqid]
     
-    def write_apollo_gff(self, seqid):
+    def write_apollo_gff(self, seqid, suppress_fasta = False):
         if self.genome_sequence != None and self.annotations != None:
             try:
-                return write_longform_gff(self.annotations.get_seqid(seqid)) + '\n' + self.get_scaffold_fasta(seqid)
+                apollo_gff = write_longform_gff(self.annotations.get_seqid(seqid))
+                if not suppress_fasta:
+                    apollo_gff = apollo_gff + '\n' + self.get_scaffold_fasta(seqid)
+                return apollo_gff
             except:
-                return self.get_scaffold_fasta(seqid)
+                if not suppress_fasta:
+                    return self.get_scaffold_fasta(seqid)
+                else:
+                    return ""
         else:
             print "genome object is either missing genome_sequence or annotations"
     

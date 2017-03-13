@@ -148,37 +148,59 @@ def  dna2orfs(fasta_location,output_file,from_atg = False,longest = False):
     out.close()
 
 
-def prep4apollo(genome_sequence, output_directory = 'apollo_gffs', exon_fasta = None, full_length_seqs = None,
+def prep4apollo(genome_sequence, suppress_fasta = "False", output_directory = 'apollo_gffs', exon_fasta = None, full_length_seqs = None,
                                exon_blast_csv = None, exonerate_output = None, other_gff = None, other_gff_format = 'gff3',
-                               blast_evalue = '0.01', exonerate_percent = '50',output_empty_scaffolds = False, exonerate_intron_steps="2000,5000,200000"):
+                               blast_evalue = '0.01', exonerate_percent = '50',output_empty_scaffolds = "False",
+                               exonerate_intron_steps = "2000,5000,200000", mapping_threads = "1"):
     """takes evidence inputs and returns gff files to open in apollo"""
     subprocess.call("mkdir -p " + output_directory, shell = True)
     subprocess.call("mkdir -p " + output_directory + "/temp", shell = True)
+    mapping_cmds = []
+    blast_run = False
+    exonerate_run = False
+    suppress_fasta = eval(suppress_fasta)
+    output_empty_scaffolds = eval(output_empty_scaffolds)
     if exon_fasta != None:
-        print "Running tblastn to map exons from exon_fasta to genome"
         subprocess.call(config.makeblastdb + ' -in ' + genome_sequence + ' -out ' + output_directory
                         + '/temp/tempdb -dbtype nucl', shell = True)
-        subprocess.call(config.tblastn + ' -query ' + exon_fasta + ' -db ' + output_directory + '/temp/tempdb -evalue '
-                        + blast_evalue + " -out " + output_directory + "/exon_tblastn.csv -outfmt 10", shell = True)
+        mapping_cmds.append(config.tblastn + ' -query ' + exon_fasta + ' -db ' + output_directory + '/temp/tempdb -evalue '
+                        + blast_evalue + " -out " + output_directory + "/exon_tblastn.csv -outfmt 10")
+        blast_run = True
+    if full_length_seqs != None:
+        exonerate_intron_lengths = exonerate_intron_steps.split(',')
+        for intron_length in exonerate_intron_lengths:        
+            mapping_cmds.append(config.exonerate + ' --model protein2genome --percent ' + exonerate_percent + ' --maxintron '
+                            + intron_length + ' ' + full_length_seqs + ' ' + genome_sequence + ' > ' + output_directory
+                            + '/exonerate_output_' + intron_length + 'bp_introns.txt')
+        exonerate_run = True
+    running_cmds = []
+    if mapping_cmds != []:
+        if blast_run:
+            print "mapping exons with tblastn"
+        if exonerate_run and blast_run:
+            print "       and"
+        if exonerate_run:
+            print "mapping full length sequences with exonerate"
+    for cmd_index in range(len(mapping_cmds)):
+        running_cmds.append(subprocess.Popen(mapping_cmds[cmd_index],shell = True))
+        if (cmd_index + 1) % int(mapping_threads) == 0:
+            for cmd in running_cmds:
+                cmd.wait()
+            running_cmds = []
+    if blast_run:
         if exon_blast_csv != None:
             subprocess.call('cat ' + exon_blast_csv + ' ' + output_directory + '/exon_tblastn.csv > ' + output_directory
                             + '/cat_exon_tblastn.csv', shell = True)
             exon_blast_csv = output_directory + '/cat_exon_tblastn.csv'
         else:
-            exon_blast_csv = output_directory + '/exon_tblastn.csv'
-    if full_length_seqs != None:
-        print "Running exonerate to map full sequences to genome"
-        exonerate_intron_lengths = exonerate_intron_steps.split(',')
-        for intron_length in exonerate_intron_lengths:        
-            subprocess.call(config.exonerate + ' --model protein2genome --percent ' + exonerate_percent + ' --maxintron '
-                            + intron_length + ' ' + full_length_seqs + ' ' + genome_sequence + ' > ' + output_directory
-                            + '/exonerate_output_' + intron_length + 'bp_introns.txt', shell = True)
+           exon_blast_csv = output_directory + '/exon_tblastn.csv'
+    if exonerate_run:
         if exonerate_output != None:
             subprocess.call('cat ' + exonerate_output + ' ' + output_directory + '/exonerate_output* > ' + output_directory
                             + '/cat_exonerate_output.txt', shell = True)
         else:
             subprocess.call('cat ' + output_directory + '/exonerate_output* > ' + output_directory + '/cat_exonerate_output.txt', shell = True)
-        exonerate_output = output_directory + '/cat_exonerate_output.txt'
+        exonerate_output = output_directory + '/cat_exonerate_output.txt'  
     print "building apollo gffs"
     my_genome = genome.Genome(genome_sequence,other_gff,annotation_format = other_gff_format)
     if exon_blast_csv != None:
@@ -191,7 +213,7 @@ def prep4apollo(genome_sequence, output_directory = 'apollo_gffs', exon_fasta = 
         seqids = my_genome.annotations.get_all_seqids()
     for seqid in seqids:
         out = open(output_directory + '/' + sanitize_pathname(seqid) + '.gff','w')
-        out.write(my_genome.write_apollo_gff(seqid))
+        out.write(my_genome.write_apollo_gff(seqid, suppress_fasta = suppress_fasta))
         out.close()
     subprocess.call('rm -rf ' + output_directory + '/temp', shell = True)
 
