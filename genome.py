@@ -389,7 +389,7 @@ def read_blast_csv(blast_csv,annotation_set_to_modify = None,hierarchy = ['match
                 if not seqid in genome_seqids:
                     for genome_seqid in genome_seqids:
                         if seqid == genome_seqid.split()[0]:
-                            seqid == genome_seqid
+                            seqid = genome_seqid
                             break
             tstart = int(fields[8])
             tend = int(fields[9])
