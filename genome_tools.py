@@ -204,7 +204,7 @@ def prep4apollo(genome_sequence, suppress_fasta = "False", output_directory = 'a
     print "building apollo gffs"
     my_genome = genome.Genome(genome_sequence,other_gff,annotation_format = other_gff_format)
     if exon_blast_csv != None:
-        my_genome.read_blast_csv(exon_blast_csv)
+        my_genome.read_blast_csv(exon_blast_csv, find_truncated_locname = True)
     if exonerate_output != None:
         my_genome.read_exonerate(exonerate_output)
     if output_empty_scaffolds:

@@ -359,7 +359,7 @@ def read_cegma_gff(cegma_gff,annotation_set_to_modify = None):
         return annotation_set
 
 
-def read_blast_csv(blast_csv,annotation_set_to_modify = None,hierarchy = ['match','match_part'], source = 'blast'):
+def read_blast_csv(blast_csv,annotation_set_to_modify = None,hierarchy = ['match','match_part'], source = 'blast', find_truncated_locname = False):
     """Reads csv output from blast (-outfmt 10) into an AnnotationSet object. Currently does not string hits together because I'm
     biased towards working on genes in tandem arrays where stringing hits together is annoying. May add option in future."""
     #reads blast_csv from file location, file, or string
@@ -375,10 +375,22 @@ def read_blast_csv(blast_csv,annotation_set_to_modify = None,hierarchy = ['match
     create_parents_chain.reverse()
     if not feature_type in annotation_set.__dict__:
         setattr(annotation_set, feature_type, {})
+    if find_truncated_locname:
+        if annotation_set.genome == None:
+            print '"warning: find_truncated_locname" was set to true, but annotation set has no associated genome object so this cannot be done'
+            find_trunctated_locname = False
+        else:
+            genome_seqids = annotation_set.genome.get_seqids()
     for line in blast_lines:
         fields = line.split(',')
         if len(fields) > 8:
             seqid = fields[1]
+            if find_truncated_locname:
+                if not seqid in genome_seqids:
+                    for genome_seqid in genome_seqids:
+                        if seqid == genome_seqid.split()[0]:
+                            seqid == genome_seqid.split()[0]
+                            break
             tstart = int(fields[8])
             tend = int(fields[9])
             if tstart < tend:
@@ -455,8 +467,8 @@ class AnnotationSet():
     def read_exonerate(self, exonerate_output):
         read_exonerate(exonerate_output,annotation_set_to_modify = self)
     
-    def read_blast_csv(self, blast_csv):
-        read_blast_csv(blast_csv, annotation_set_to_modify = self)
+    def read_blast_csv(self, blast_csv, hierarchy = ['match','match_part'], source = 'blast', find_truncated_locname = False):
+        read_blast_csv(blast_csv, annotation_set_to_modify = self, hierarchy = hierarchy, source = source, find_truncated_locname = find_truncated_locname)
     
     def read_cegma_gff(self, cegma_gff):
         read_cegma_gff(cegma_gff, annotation_set_to_modify = self)
@@ -558,8 +570,8 @@ class BaseAnnotation():
 
 
 class ParentAnnotation():
-    """Parent of any BaseAnnotation. Examples include genes, transcripts, and exons. Suggested hierarchy for genes is
-    CDS (as BaseAnnotation) -> exon -> transcript -> gene."""
+    """Parent of any BaseAnnotation. Examples include genes and transcripts. Suggested hierarchy for genes is
+    CDS (as BaseAnnotation) -> transcript -> gene."""
     def __init__(self, ID, seqid, feature_type, child_list = [], parent = None, annotation_set = None, other_attributes = {}):
         self.ID = ID
         self.seqid = seqid
@@ -617,7 +629,7 @@ class ParentAnnotation():
     
 
 class Sequence(str):
-    """DNA sequence. Will eventually have methods allowing reverse complimenting,
+    """DNA sequence. Has methods allowing reverse complimenting,
         translating, etc."""
     def reverse_compliment(self):
         """returns reverse compliment of self"""
@@ -772,11 +784,11 @@ class Genome():
             self.annotations = read_exonerate(exonerate_output)
             self.annotations.genome = self
     
-    def read_blast_csv(self, blast_csv):
+    def read_blast_csv(self, blast_csv, hierarchy = ['match','match_part'], source = 'blast', find_truncated_locname = False):
         if self.annotations != None:
-            self.annotations.read_blast_csv(blast_csv)
+            self.annotations.read_blast_csv(blast_csv, hierarchy = hierarchy, source = source, find_truncated_locname = find_truncated_locname)
         else:
-            self.annotations = read_blast_csv(blast_csv)
+            self.annotations = read_blast_csv(blast_csv, hierarchy = hierarchy, source = source, find_truncated_locname = find_truncated_locname)
             self.annotations.genome = self
     
     def read_cegma_gff(self, cegma_gff):
