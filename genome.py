@@ -716,6 +716,9 @@ class GenomeSequence(dict):
                 seqstring = Sequence("".join(block[1:]))
                 self[seqid] = seqstring
 
+        
+    
+
 
 class Genome():
     """genome class, which contains sequence and annotations. Annotations can be given as annotation_set object, gff3, cegma_gff,
@@ -746,6 +749,16 @@ class Genome():
     
     def get_scaffold_fasta(self, seqid):
         return '>' + seqid + '\n' + self.genome_sequence[seqid]
+    
+    def get_genome_fasta(self, remove_spaces = False):
+        fasta_list = []
+        for seqid in self.genome_sequence:
+            if remove_spaces:
+                fasta_header = seqid.split()[0]
+            else:
+                fasta_header = seqid
+            fasta_list.append('>' + fasta_header + '\n' + self.genome_sequence[seqid])
+        return "\n".join(fasta_list)
     
     def write_apollo_gff(self, seqid, suppress_fasta = False):
         if self.genome_sequence != None and self.annotations != None:
