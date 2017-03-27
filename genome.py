@@ -378,7 +378,7 @@ def read_blast_csv(blast_csv,annotation_set_to_modify = None,hierarchy = ['match
     if find_truncated_locname:
         if annotation_set.genome == None:
             print '"warning: find_truncated_locname" was set to true, but annotation set has no associated genome object so this cannot be done'
-            find_trunctated_locname = False
+            find_truncated_locname = False
         else:
             genome_seqids = annotation_set.genome.get_seqids()
     for line in blast_lines:
@@ -785,11 +785,11 @@ class Genome():
             self.annotations.genome = self
     
     def read_blast_csv(self, blast_csv, hierarchy = ['match','match_part'], source = 'blast', find_truncated_locname = False):
-        if self.annotations != None:
-            self.annotations.read_blast_csv(blast_csv, hierarchy = hierarchy, source = source, find_truncated_locname = find_truncated_locname)
-        else:
-            self.annotations = read_blast_csv(blast_csv, hierarchy = hierarchy, source = source, find_truncated_locname = find_truncated_locname)
+        if self.annotations == None:
+            self.annotations = AnnotationSet()
             self.annotations.genome = self
+        self.annotations.read_blast_csv(blast_csv, hierarchy = hierarchy, source = source, find_truncated_locname = find_truncated_locname)
+            
     
     def read_cegma_gff(self, cegma_gff):
         if self.annotations != None:
