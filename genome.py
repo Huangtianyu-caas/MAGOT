@@ -420,6 +420,101 @@ def read_blast_csv(blast_csv,annotation_set_to_modify = None,hierarchy = ['match
         return annotation_set
 
 
+def calculate_heterozygousity(variant_set,locus_list):
+    """calculates heterozygosity at each locus specified in locus_list. loci are specified as either "seqid,seq_length" for entire contigs/scaffold, or for regions within contigs/scaffold, "seqid,start_position,stop_position" """
+    outlist = []
+    for variant_code in variant_set:
+        variant_code_split = variant_code.split('<:>')
+        seqid = variant_code_split[0]
+        position = variant_code_split[1]
+        for locus in locus_list:
+            locus_split = locus.split(',')
+            hetcount = 0
+            if len(locus.split(',')) > 2:
+                if seqid == locus_split[0]:
+                    if int(locus_split[1]) <= position <= int(locus_split[2]):
+                        hetcount = hetcount + 1
+                        break
+                seqlen = int(locus_split[2]) - int(locus_split[1])
+                outlist.append((locus,100.0 * hetcount / seqlen))
+            else:
+                if seqid == locus_split[0]:
+                    hetcount = hetcount + 1
+                seqlen = int(locus_split[1])
+                outlist.append(locus + ", " + str(100.0 * hetcount / seqlen))
+    return '\n'.join(outlist)
+    
+
+
+
+def read_vcf(vcf, variant_set_to_modify = None):
+    """reads vcf file into variant_set"""
+    vcf_list = read_to_string(vcf).split('\n')
+    vcf_headerlines = []
+    if variant_set_to_modify == None:
+        variant_set = VariantSet()
+    else:
+        variant_set = variant_set_to_modify
+    if variant_set.vcf_headers == None:
+        variant_set.vcf_headers = []
+    vcf_header_index = len(variant_set.vcf_headers)
+    for line in vcf_list:
+        if line[:2] == "##":
+            vcf_headerlines.append(line)
+        elif line[0] == "#":
+            field_names = line[1:].split('\t')
+            if len(field_names) > 8:
+                sample_names = field_names[9:]
+        else:
+            fields = line.split('\t')
+            seqid = fields[0]
+            position = fields[1]
+            ref_allele = fields[3]
+            alt_alleles = fields[4].split(',')
+            variant_ID = seqid + "<:>" + position
+            variant_set[variant_ID] = Variant(ref_allele, alt_alleles, variant_set = variant_set)
+            variant_set[variant_ID].ID = fields[2]
+            variant_set[variant_ID].quality = fields[5]
+            variant_set[variant_ID].filter_status = fields[6]
+            variant_set[variant_ID].info = fields[7]
+            variant_set[variant_ID].vcf_header_index = vcf_header_index
+            if len(fields) > 8:
+                genotypes = {}
+                sample_features = fields[8].split(':')
+                for sample in fields[9:]:
+                    sample_name = sample_names[fields.index(sample) - 9]
+                    genotypes[sample_name] = Genotype()
+                    this_sample_features = sample.split(':')
+                    for feature in sample_features:
+                        setattr(genotypes[sample_name], feature, this_sample_features[sample_features.index(feature)])
+                variant_set[variant_ID].genotypes = genotypes
+        variant_set.vcf_headers.append('\n'.join(vcf_headerlines))
+    if variant_set_to_modify == None:
+        return variant_set
+
+
+class Genotype():
+    """individual genotype to populate a GenotypeDict"""
+    def name(self, ):
+        pass
+    
+
+class Variant():
+    """individual variants from reference genome sequence. Can be SNPs or polimorphism"""
+    def __init__(self, ref_allele, alt_alleles, genotypes = None, variant_set = None, vcf_header_index = None):
+        self.variant_set = variant_set
+        self.ref_allele = ref_allele
+        self.alt_alleles = alt_alleles
+        self.genotypes = genotypes
+    
+
+class VariantSet(dict):
+    """set of variants from reference genome sequence. Can be SNPs or polimorphism"""
+    def __init__(self, genome = None, vcf_headers = None):
+        self.genome = genome
+        self.vcf_headers = vcf_headers
+    
+
 class AnnotationSet():
     """A set of annotations of a single genome. Each feature type (e.g. gene, transcript, exon, etc.)
     is stored in it's own dictionary as Annotations with their ID as their key (see "Annotation" class).
@@ -472,8 +567,7 @@ class AnnotationSet():
     
     def read_cegma_gff(self, cegma_gff):
         read_cegma_gff(cegma_gff, annotation_set_to_modify = self)
-    
-    
+       
 
 class BaseAnnotation():
     """Bottom-most level annotation on a genome, for example CDS, UTR, Match, etc. Anything that should have no children"""
@@ -696,10 +790,6 @@ class Sequence(str):
             return candidate_list[-1]
         else:
             return orflist
-    
-
-  
-    
 
 
 class GenomeSequence(dict):
@@ -723,7 +813,7 @@ class GenomeSequence(dict):
 class Genome():
     """genome class, which contains sequence and annotations. Annotations can be given as annotation_set object, gff3, cegma_gff,
     blast_csv, or exonerate_output (just set annotation_format)."""
-    def __init__(self,genome_sequence = None, annotations = None, annotation_format = 'annotation_set'):
+    def __init__(self,genome_sequence = None, annotations = None, varients = None, annotation_format = 'annotation_set'):
         if genome_sequence.__class__.__name__ == 'GenomeSequence' or genome_sequence == None:
             self.genome_sequence = genome_sequence
         else:
@@ -802,7 +892,6 @@ class Genome():
             self.annotations = AnnotationSet()
             self.annotations.genome = self
         self.annotations.read_blast_csv(blast_csv, hierarchy = hierarchy, source = source, find_truncated_locname = find_truncated_locname)
-            
     
     def read_cegma_gff(self, cegma_gff):
         if self.annotations != None:
@@ -811,7 +900,8 @@ class Genome():
             self.annotations = read_cegma_gff(cegma_gff)
             self.annotations.genome = self
     
-    
+    def read_vcf(self, vcf):
+        self.variants = read_vcf(vcf)
     
     
 
