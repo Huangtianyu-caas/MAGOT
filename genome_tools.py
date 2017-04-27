@@ -1,17 +1,26 @@
 #!/usr/bin/python
 try:
     import genome
-    import genome_tools_config
+    import genome_tools_config as config
 except:
     print "it appears that genome_tools.py is not in the same directory as genome.py and genome_tools_config.py"
 import sys
 import subprocess
 
-config = genome_tools_config
 
 
 def sanitize_pathname(pathname):
     return pathname.replace('|','').replace('<','').replace('>','').replace(':','').replace(';','')
+
+
+def help():
+    func_list = []
+    for attribute in globals():
+        if type(globals()[attribute]).__name__ == "function":
+            func_list.append(attribute)
+    func_list.remove('main')
+    print "\ngenome_tools script from GenomePy.\n\nUsage: python genome_tools.py function [option1=<option1 choice> ...] \n\nFunctions:\n\
+    " + '\n    '.join(func_list)
 
 
 #debug
@@ -275,12 +284,17 @@ def get_CDS_peptides(genome_sequence,gff,output_location,gene_name_filters = [],
                         break
                     out.write('>' + pep_name + '\n' + CDSdict[CDS][1] + '\n')
 
-    
 
-
-
-
-
+def starjunc2gff(starjunc_file, output = 'stdout'):
+    if output == 'stdout':
+        outopt = 'print'
+    else:
+        out = open(output,'w')
+        outopt = 'string'
+    stargff = genome.starjunc2gff(starjunc_file,output = outopt)
+    if outopt == 'string':
+        out.write(starff)
+        out.close()
 
 
 if __name__ == "__main__":
