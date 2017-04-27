@@ -46,9 +46,9 @@ def starjunc2gff(starjunc, output = 'string'):
         ID = "StarAlignment_" + str(counter)
         counter = counter + 1
         atts = line.split('\t')
-        stop1 = int(atts[1])
+        stop1 = int(atts[1]) - 1
         start1 = stop1 - 20
-        start2 = int(atts[2])
+        start2 = int(atts[2]) + 1
         stop2 = start2 + 20
         gffline1 = '\t'.join([atts[0],'star','match',str(start1),str(stop2),atts[6], strands[int(atts[3])],'.','ID=' + ID])
         gffline2 = '\t'.join([atts[0],'star','match_part',str(start1),str(stop1),atts[6], strands[int(atts[3])],'.','ID=' + ID + '-part1;Parent=' + ID])
