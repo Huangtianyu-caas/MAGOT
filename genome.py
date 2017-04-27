@@ -50,9 +50,9 @@ def starjunc2gff(starjunc, output = 'string'):
         start1 = stop1 - 20
         start2 = int(atts[2])
         stop2 = start2 + 20
-        gffline1 = '\t'.join([atts[0],'star','match',str(start1),str(stop2),atts[6], strands[int(atts[3])],'.',ID])
-        gffline2 = '\t'.join([atts[0],'star','match_part',str(start1),str(stop1),atts[6], strands[int(atts[3])],'.',ID + '-part1;Parent=' + ID])
-        gffline3 = '\t'.join([atts[0],'star','match_part',str(start2),str(stop2),atts[6], strands[int(atts[3])],'.',ID + '-part2;Parent=' + ID])
+        gffline1 = '\t'.join([atts[0],'star','match',str(start1),str(stop2),atts[6], strands[int(atts[3])],'.','ID=' + ID])
+        gffline2 = '\t'.join([atts[0],'star','match_part',str(start1),str(stop1),atts[6], strands[int(atts[3])],'.','ID=' + ID + '-part1;Parent=' + ID])
+        gffline3 = '\t'.join([atts[0],'star','match_part',str(start2),str(stop2),atts[6], strands[int(atts[3])],'.','ID=' + ID + '-part2;Parent=' + ID])
         if output == 'print':
             print gffline1
             print gffline2
@@ -65,6 +65,8 @@ def starjunc2gff(starjunc, output = 'string'):
         return "\n".join(outlines)
     elif output == "list":
         return outlines
+    elif output == "print":
+        pass
     else:
         print "invalid output format"
 
