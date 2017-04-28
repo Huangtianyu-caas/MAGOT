@@ -866,7 +866,7 @@ class Sequence(str):
             seq = self
         elif strand == '-':
             seq = self.reverse_compliment()
-        if seq != "":
+        if len(seq) > 2:
             for residue_position in range(frame, len(self)):
                 triplet = triplet + seq[residue_position].upper()
                 if (residue_position + frame) % 3 == 2:
