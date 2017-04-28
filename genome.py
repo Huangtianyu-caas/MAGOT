@@ -875,6 +875,8 @@ class Sequence(str):
                     except KeyError:
                         newseq = newseq + 'X'
                     triplet = ""
+            if len(newseq) < 1:
+                print seq
             if trimX:
                 if newseq[0] == 'X':
                     newseq = newseq[1:]
