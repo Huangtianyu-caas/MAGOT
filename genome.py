@@ -866,18 +866,19 @@ class Sequence(str):
             seq = self
         elif strand == '-':
             seq = self.reverse_compliment()
-        for residue_position in range(frame, len(self)):
-            triplet = triplet + seq[residue_position].upper()
-            if (residue_position + frame) % 3 == 2:
-                try:
-                    newseq = newseq + library[triplet]
-                except KeyError:
-                    newseq = newseq + 'X'
-                triplet = ""
-        if trimX:
-            if newseq[0] == 'X':
-                newseq = newseq[1:]
-        return newseq
+        if seq != "":
+            for residue_position in range(frame, len(self)):
+                triplet = triplet + seq[residue_position].upper()
+                if (residue_position + frame) % 3 == 2:
+                    try:
+                        newseq = newseq + library[triplet]
+                    except KeyError:
+                        newseq = newseq + 'X'
+                    triplet = ""
+            if trimX:
+                if newseq[0] == 'X':
+                    newseq = newseq[1:]
+            return newseq
     
     def get_orfs(self, longest = False, strand = 'both', from_atg = False):
         orflist = []
