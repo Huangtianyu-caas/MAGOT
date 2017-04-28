@@ -889,21 +889,23 @@ class Sequence(str):
             longest_orf_len = 0
         for frame in [0,1,2]:
             for strand in ['-','+']:
-                translated_seq_list = self.translate(frame=frame,strand=strand).split('*')
-                for orf in translated_seq_list:
-                    if from_atg:
-                        try:
-                            output_orf = 'M' + ''.join(orf.split('M')[1:])
-                        except IndexError:
-                            continue
-                    else:
-                        output_orf = orf
-                    if longest:
-                        if len(output_orf) > longest_orf_len:
-                            candidate_list.append(output_orf)
-                            longest_orf_len = len(output_orf)
-                    else:
-                        orflist.append(output_orf)
+                translated_seq = self.translate(frame=frame,strand=strand)
+                if translated_seq:
+                    translated_seq_list = translated_seq.split('*')
+                    for orf in translated_seq_list:
+                        if from_atg:
+                            try:
+                                output_orf = 'M' + ''.join(orf.split('M')[1:])
+                            except IndexError:
+                                continue
+                        else:
+                            output_orf = orf
+                        if longest:
+                            if len(output_orf) > longest_orf_len:
+                                candidate_list.append(output_orf)
+                                longest_orf_len = len(output_orf)
+                        else:
+                            orflist.append(output_orf)
         if longest:
             return candidate_list[-1]
         else:
