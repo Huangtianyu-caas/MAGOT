@@ -866,7 +866,7 @@ class Sequence(str):
             seq = self
         elif strand == '-':
             seq = self.reverse_compliment()
-        if len(seq) > 2:
+        if len(seq) > (2 + frame):
             for residue_position in range(frame, len(self)):
                 triplet = triplet + seq[residue_position].upper()
                 if (residue_position + frame) % 3 == 2:
@@ -875,8 +875,8 @@ class Sequence(str):
                     except KeyError:
                         newseq = newseq + 'X'
                     triplet = ""
-            if len(newseq) < 1:
-                print seq
+            #if len(newseq) < 1:
+            #    print seq
             if trimX:
                 if newseq[0] == 'X':
                     newseq = newseq[1:]
