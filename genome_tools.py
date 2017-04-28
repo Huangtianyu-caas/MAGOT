@@ -12,7 +12,7 @@ def main():
     program = sys.argv[1]
     arguments = sys.argv[2:]
     command = program + "("
-    if program == '-h' or program == '-help' or program == '--help' or 'help':
+    if program == '-h' or program == '-help' or program == '--help' or program == 'help':
         help_func()
         return None
     for argument in arguments:
