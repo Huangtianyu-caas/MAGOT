@@ -71,7 +71,6 @@ def starjunc2gff(starjunc, output = 'string'):
         print "invalid output format"
 
 
-
 def vulgar2gff(vulgarlist, feature_types=['match','match_part'],source='exonerate'):
     """takes vulgar alignment list (e.g. vulgarstring.split() ) and outputs gff lines. For eventual use with a read_exonerate function"""
     #sets variables to be added to gff lines
@@ -272,7 +271,7 @@ def read_gff3(gff3,annotation_set_to_modify = None,gene_hierarchy = ['gene','mRN
               other_hierarchies = [['match','match_part']],features_to_ignore = ['exon'],
               features_to_replace = [('protein_match','match'),('expressed_sequence_match','match')]):
     #reads gff3 to string if supplied as a file or file location
-    gff_list = read_to_string(gff3).split('\n')
+    gff_file = ensure_file(gff3)
     #reformates features_to_replace to be used in later command
     for feature in features_to_replace[:]:
         features_to_replace.append(str(feature))
@@ -287,7 +286,7 @@ def read_gff3(gff3,annotation_set_to_modify = None,gene_hierarchy = ['gene','mRN
     #this dictionary helps generate names if features passed with identical ID fields
     generate_new_ID_dict = {}
     #Fills annotiation_set
-    for gff_line in gff_list:
+    for gff_line in gff_file:
         if len(gff_line) > 1:
             if gff_line[0] != '#' and gff_line.count('\t') == 8:
                 try:
@@ -652,8 +651,9 @@ class AnnotationSet():
                     pass
         return all_dicts[item]
     
-    def read_gff3(self, gff3):
-        read_gff3(gff3, annotation_set_to_modify = self)
+    def read_gff3(self, gff3, *args, **kwargs):
+        kwargs["annotation_set_to_modify"] = self
+        read_gff3(gff3, *args, **kwargs)
     
     def get_seqid(self, seqid):
         seqid_annotation_set = AnnotationSet()        
@@ -1011,9 +1011,17 @@ class Genome():
         else:
             self.annotations = read_cegma_gff(cegma_gff)
             self.annotations.genome = self
+
+    def read_gff3(self, gff3, *args, **kwargs):
+        if self.annotations != None:
+            self.annotations.read_gff3(gff3, *args, **kwargs)
+        else:
+            self.annotations = read_gff3(gff3, *args, **kwargs)
+            self.annotations.genome = self
     
     def read_vcf(self, vcf):
         self.variants = read_vcf(vcf)
     
+
     
 

@@ -8,12 +8,32 @@ import sys
 import subprocess
 
 
+def main():
+    program = sys.argv[1]
+    arguments = sys.argv[2:]
+    command = program + "("
+    if program == '-h' or program == '-help' or program == '--help' or 'help':
+        help_func()
+        return None
+    for argument in arguments:
+        if '=' in argument:
+            argsplit = argument.split('=')
+            command = command + argsplit[0] + '="'+ argsplit[1] +'",'
+        else:
+            command = command + '"' + argument + '",'
+    if command[-1] == ',':
+        command = command[:-1] + ')'
+    else:
+        command = command + ')'    
+    eval(command)
+
+
 
 def sanitize_pathname(pathname):
     return pathname.replace('|','').replace('<','').replace('>','').replace(':','').replace(';','')
 
 
-def help():
+def help_func():
     func_list = []
     for attribute in globals():
         if type(globals()[attribute]).__name__ == "function":
@@ -31,23 +51,6 @@ def print_input(*arg):
     shell = True
     )
     #/debug
-
-
-def main():
-    program = sys.argv[1]
-    arguments = sys.argv[2:]
-    command = program + "("
-    for argument in arguments:
-        if '=' in argument:
-            argsplit = argument.split('=')
-            command = command + argsplit[0] + '="'+ argsplit[1] +'",'
-        else:
-            command = command + '"' + argument + '",'
-    if command[-1] == ',':
-        command = command[:-1] + ')'
-    else:
-        command = command + ')'    
-    eval(command)
 
 
 def nucmer_plot(qgenome_file_loc,tgenome_file_loc):
@@ -234,7 +237,8 @@ def blast_csv2fasta(genome_sequence,blast_csv):
     for match in my_genome.annotations.match:
         outfasta.append(my_genome.annotations.match[match].get_fasta())
     print '\n'.join(outfasta)
-    
+
+  
 def exonerate2fasta(genome_sequence,exonerate_file):
     my_genome = genome.Genome(genome_sequence)
     my_genome.read_exonerate(exonerate_file)
@@ -244,9 +248,9 @@ def exonerate2fasta(genome_sequence,exonerate_file):
     print '\n'.join(outfasta)
 
 
-
-def get_CDS_peptides(genome_sequence,gff,output_location,gene_name_filters = [], gene_length_filter = None, names_from = "CDS"):
-    my_genome = genome.Genome(genome_sequence,gff,annotation_format = 'gff3')
+def get_CDS_peptides(genome_sequence,gff,output_location,gene_name_filters = [], gene_length_filter = None, names_from = "CDS",from_exons = False):
+    my_genome = genome.Genome(genome_sequence)
+    my_genome.read_gff3(gff)
     out = open(output_location,'w')
     for gene in my_genome.annotations.gene:
         gene_obj = my_genome.annotations.gene[gene]
