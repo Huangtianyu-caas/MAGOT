@@ -330,10 +330,10 @@ def multithread_exonerate(query_fasta, database_fasta, threads, exonerate_option
         chunckstop = (i+1) * n_per_file
         outname = tempdir + '/chunck' + str(i) + '.fasta'
         out=open(outname,'w')
-        out.write(">" + ">".join(querylist[chunkstart:chunkstop]))
+        out.write(">" + ">".join(query_list[chunkstart:chunkstop]))
         out.close()
-        running_cmds.append(subprocess.Popen(config.exonerate + " " + exonerate_options + " " + outname + " " + database_fasta + " > " + outname +
-                        ".exonerate &",shell = True))
+        running_cmds.append(subprocess.Popen(config.exonerate + " " + exonerate_options + " " + outname + " " + database_fasta + " > "
+                                             + outname + ".exonerate &",shell = True))
     for cmd in running_cmds:
                 cmd.wait()
     subprocess.call("cat " + tempdir + "/*.exonerate")
