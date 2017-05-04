@@ -318,8 +318,28 @@ def fasta2tab(fasta_file):
     print genome.fasta2tab(fasta_file)
 
 
-def multithread_exonerate(query_fasta, database_fasta):
-    pass
+def multithread_exonerate(query_fasta, database_fasta, threads, exonerate_options="--model protein2genome", tempdir = "temp_multithread_exonerate"):
+    """splits query_fasta into smaller files (equivalent to # threads) and runs them seperately, then combines the output"""
+    query_list = open(query_fasta).read().split('>')[1:]
+    n_query_seqs = len(query_list)
+    n_per_file = n_query_seqs / threads + 1
+    subprocess.call('mkdir '+tempdir, shell = True)
+    running_cmds = []
+    for i in range(threads):
+        chunkstart = i * n_per_file
+        chunckstop = (i+1) * n_per_file
+        outname = tempdir + '/chunck' + str(i) + '.fasta'
+        out=open(outname,'w')
+        out.write(">" + ">".join(querylist[chunkstart:chunkstop]))
+        out.close()
+        running_cmds.append(subprocess.Popen(config.exonerate + " " + exonerate_options + " " + outname + " " + database_fasta + " > " + outname +
+                        ".exonerate &",shell = True))
+    for cmd in running_cmds:
+                cmd.wait()
+    subprocess.call("cat " + tempdir + "/*.exonerate")
+    subrpocess.call('rm -rf ' + tempdir)
+
+    
 
 
 def exclude_from_fasta(fasta, exclude_list, just_firstword = "False"):
