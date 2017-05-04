@@ -322,10 +322,10 @@ def multithread_exonerate(query_fasta, database_fasta, threads, exonerate_option
     """splits query_fasta into smaller files (equivalent to # threads) and runs them seperately, then combines the output"""
     query_list = open(query_fasta).read().split('>')[1:]
     n_query_seqs = len(query_list)
-    n_per_file = n_query_seqs / threads + 1
+    n_per_file = n_query_seqs / int(threads) + 1
     subprocess.call('mkdir '+tempdir, shell = True)
     running_cmds = []
-    for i in range(threads):
+    for i in range(int(threads)):
         chunkstart = i * n_per_file
         chunckstop = (i+1) * n_per_file
         outname = tempdir + '/chunck' + str(i) + '.fasta'
