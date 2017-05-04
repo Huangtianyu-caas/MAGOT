@@ -327,7 +327,7 @@ def multithread_exonerate(query_fasta, database_fasta, threads, exonerate_option
     running_cmds = []
     for i in range(int(threads)):
         chunkstart = i * n_per_file
-        chunckstop = (i+1) * n_per_file
+        chunkstop = (i+1) * n_per_file
         outname = tempdir + '/chunck' + str(i) + '.fasta'
         out=open(outname,'w')
         out.write(">" + ">".join(query_list[chunkstart:chunkstop]))
