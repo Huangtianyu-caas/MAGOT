@@ -330,7 +330,12 @@ def exclude_from_fasta(fasta, exclude_list, just_firstword = "False"):
         exlist = open(exclude_list).read().split('\n').replace('\r','')
     except:
         exlist = exclude_list.split(',')
+    print exlist
+    debug = True
     for seqid in my_fasta.genome_sequence:
+        if debug:
+            print seqid
+            debug = False
         if just_firstword == "True":
             seqid_fixed = seqid.split()[0]
         else:
