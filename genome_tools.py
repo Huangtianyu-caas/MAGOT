@@ -322,7 +322,7 @@ def multithread_exonerate(query_fasta, database_fasta):
     pass
 
 
-def exclude_from_fasta(fasta, exclude_list):
+def exclude_from_fasta(fasta, exclude_list, just_firstword = "False"):
     """excludes specific fasta entries from fasta file. "exclude_list" can be either comma
     seperated names or name of file with names on each line"""
     my_fasta = genome.Genome(fasta)
@@ -331,7 +331,11 @@ def exclude_from_fasta(fasta, exclude_list):
     except:
         exlist = exclude_list.split(',')
     for seqid in my_fasta.genome_sequence:
-        if not seqid in exlist:
+        if just_firstword == "True":
+            seqid_fixed = seqid.split()[0]
+        else:
+            seqid_fixed = seqid
+        if not seqid_fixed in exlist:
             print '>' + seqid + '\n' + my_fasta.genome_sequence[seqid]
     
 
