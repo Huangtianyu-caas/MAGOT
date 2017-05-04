@@ -3,6 +3,29 @@
 import copy
 import StringIO
 
+
+def tab2fasta(tab_file):
+    tabs = ensure_file(tab_file)
+    newlines = []
+    for line in tabs:
+        fields = line.replace('\n','').replace('\r','').split('\t')
+        newlines.append('>'+fields[0]+'\n'+fields[1])
+    return "\n".join(newlines)
+
+
+def fasta2tab(fasta_file):
+    fasta = ensure_file(fasta_file)
+    newlines = []
+    for line in fasta:
+        if line[0] == '>':
+            newlines.append(line[1:].replace('\n','').replace('\r','') + '\t')
+        else:
+            newlines[-1] = newlines[-1] + line.replace('\n','').replace('\r','')
+    return '\n'.join(newlines)
+    
+
+
+
 def ensure_file(potential_file):
     """takes an input that can be either a file location, opened file, or string, and returns an opened file or file like object.
     Used to make downstream applications robust to different input types"""
@@ -33,6 +56,7 @@ def apollo2genome(apollo_gff):
     gff3 = apollo_list[0]
     fasta = '>' + apollo_list[1]
     return Genome(fasta,gff3,annotation_format='gff3')
+
 
 
 def starjunc2gff(starjunc, output = 'string'):
@@ -286,7 +310,8 @@ def read_gff3(gff3,annotation_set_to_modify = None,gene_hierarchy = ['gene','mRN
     #this dictionary helps generate names if features passed with identical ID fields
     generate_new_ID_dict = {}
     #Fills annotiation_set
-    for gff_line in gff_file:
+    for gff_line_with_return in gff_file:
+        gff_line = gff_line_with_return.replace('\n','').replace('\r','')
         if len(gff_line) > 1:
             if gff_line[0] != '#' and gff_line.count('\t') == 8:
                 try:
@@ -682,7 +707,17 @@ class AnnotationSet():
     
     def read_cegma_gff(self, cegma_gff):
         read_cegma_gff(cegma_gff, annotation_set_to_modify = self)
-       
+    
+    def get_fasta(self,feature,seq_type = "nucleotide"):
+        fasta_list = []
+        for annotation in eval('self.' + feature):
+            if seq_type == "nucleotide":
+                fasta_list.append(eval('self.' + feature)[annotation].get_fasta(seq_type = "nucleotide"))
+            elif seq_type == "protein":
+                fasta_list.append(eval('self.' + feature)[annotation].get_fasta(seq_type = "protein"))
+        return "\n".join(fasta_list)
+        
+    
 
 class BaseAnnotation():
     """Bottom-most level annotation on a genome, for example CDS, UTR, Match, etc. Anything that should have no children"""
@@ -810,7 +845,7 @@ class ParentAnnotation():
                     ParentAnnotation objects nor BaseAnnotation object. Get your act together"
             return (min(coords_list),max(coords_list))
     
-    def get_fasta(self):
+    def get_fasta(self, seq_type = "nucleotide"):
         """Returns fasta of this annotation's sequence. If this feature has multiple subfeatures (e.g. this is a gene
         and it has multiple transcripts), the sequence of each subfeature will be an entry in the fasta string."""
         if len(self.child_list) > 0 and self.annotation_set != None:
@@ -829,11 +864,17 @@ class ParentAnnotation():
                     if strand == '-':
                         children_in_correct_order.reverse()
                     for child in children_in_correct_order:
-                        seq_list.append(child_dict[child])                    
-                    fasta_list.append('>' + self.ID + '\n' + ''.join(seq_list))
+                        seq_list.append(child_dict[child])
+                    if seq_type == "nucleotide":
+                        new_seq = Sequence("".join(seq_list))
+                    elif seq_type == "protein":
+                        new_seq = Sequence("".join(seq_list)).translate()
+                    else:
+                        print seq_type + ' is not valid seq_type. Please specify "protein" or "nucleotide".'
+                    fasta_list.append('>' + self.ID + '\n' + new_seq)
                 else:
                     for child in self.child_list:
-                        fasta_list.append(self.annotation_set[child].get_fasta())
+                        fasta_list.append(self.annotation_set[child].get_fasta(seq_type=seq_type))
                 return '\n'.join(fasta_list)
     
 
@@ -925,6 +966,8 @@ class GenomeSequence(dict):
                 seqid = block[0]
                 seqstring = Sequence("".join(block[1:]))
                 self[seqid] = seqstring
+
+    
 
 
 class Genome():

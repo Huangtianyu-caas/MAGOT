@@ -122,7 +122,7 @@ def genewise_wrapper(query_file,genome_file,hmm = False):
     subprocess.call('rm -r temp', shell = True)
 
 
-def  dna2orfs(fasta_location,output_file,from_atg = False,longest = False):
+def dna2orfs(fasta_location,output_file,from_atg = False,longest = False):
     """takes a dna sequence in fasta format and returns ORFs found therein"""
     dna = genome.Genome(fasta_location)
     out = open(output_file, 'w')
@@ -248,7 +248,7 @@ def exonerate2fasta(genome_sequence,exonerate_file):
     print '\n'.join(outfasta)
 
 
-def get_CDS_peptides(genome_sequence,gff,output_location,gene_name_filters = [], gene_length_filter = None, names_from = "CDS",from_exons = False):
+def get_CDS_peptides(genome_sequence,gff,output_location,gene_name_filters = [], gene_length_filter = None, names_from = "CDS"):
     my_genome = genome.Genome(genome_sequence)
     my_genome.read_gff3(gff)
     out = open(output_location,'w')
@@ -289,6 +289,15 @@ def get_CDS_peptides(genome_sequence,gff,output_location,gene_name_filters = [],
                     out.write('>' + pep_name + '\n' + CDSdict[CDS][1] + '\n')
 
 
+def gff2fasta(genome_sequence,gff,from_exons = "False",seq_type = "nucleotide"):
+    my_genome = genome.Genome(genome_sequence)
+    if from_exons == "True":
+        my_genome.read_gff3(gff, features_to_ignore = "CDS", features_to_replace = [('exon','CDS')])
+    else:
+        my_genome.read_gff3(gff)
+    print my_genome.annotations.get_fasta('gene',seq_type = seq_type)
+
+
 def starjunc2gff(starjunc_file, output = 'stdout'):
     if output == 'stdout':
         outopt = 'print'
@@ -299,6 +308,33 @@ def starjunc2gff(starjunc_file, output = 'stdout'):
     if outopt == 'string':
         out.write(starff)
         out.close()
+
+
+def tab2fasta(tab_file):
+    print genome.tab2fasta(tab_file)
+    
+
+def fasta2tab(fasta_file):
+    print genome.fasta2tab(fasta_file)
+
+
+def multithread_exonerate(query_fasta, database_fasta):
+    pass
+
+
+def exclude_from_fasta(fasta, exclude_list):
+    """excludes specific fasta entries from fasta file. "exclude_list" can be either comma
+    seperated names or name of file with names on each line"""
+    my_fasta = genome.Genome(fasta)
+    try:
+        exlist = open(exclude_list).read().split('\n').replace('\r','')
+    except:
+        exlist = exclude_list.split(',')
+    for seqid in my_fasta.genome_sequence:
+        if not seqid in exlist:
+            print '>' + seqid + '\n' + my_fasta.genome_sequence[seqid]
+    
+
 
 
 if __name__ == "__main__":
