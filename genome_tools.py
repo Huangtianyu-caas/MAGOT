@@ -327,15 +327,10 @@ def exclude_from_fasta(fasta, exclude_list, just_firstword = "False"):
     seperated names or name of file with names on each line"""
     my_fasta = genome.Genome(fasta)
     try:
-        exlist = open(exclude_list).read().split('\n').replace('\r','')
+        exlist = open(exclude_list).read().replace('\r','').split('\n')
     except:
         exlist = exclude_list.split(',')
-    print exlist
-    debug = True
     for seqid in my_fasta.genome_sequence:
-        if debug:
-            print seqid
-            debug = False
         if just_firstword == "True":
             seqid_fixed = seqid.split()[0]
         else:
