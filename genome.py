@@ -1,5 +1,6 @@
 #!/usr/bin/python
 #GenomePy: a functional and simple library for genomic analysis
+
 import copy
 import StringIO
 
@@ -424,6 +425,45 @@ def read_gff3(gff3,annotation_set_to_modify = None,gene_hierarchy = ['gene','mRN
         return(annotation_set)
 
 
+def read_gtf(gtf,annotation_set_to_modify = None, parent_attribute = None, ID_attribute = None):
+    gtf_file = ensure_file(gtf)
+    if annotation_set_to_modify == None:
+        annotation_set = AnnotationSet()
+    else:
+        annotation_set = annotation_set_to_modify
+    for line in gtf_file:
+        fields = line.split('\t')
+        seqid = fields[0]
+        source = fields[1]
+        feature = fields[2]
+        coords = [int(fields[3]),int(fields[4])]
+        coords.sort()
+        score = fields[5]
+        strand = fields[6]
+        attributes = fields[8].split(';')
+        attribute_dic = {}
+        for attribute in attributes:
+            try:
+                attribute_dic[attribute.split()[0]] = attribute.split()[1]
+            except:
+                if unnamed_attributes in attribute_dic:
+                    attribute_dic[unnamed_attributes].append(attribute)
+                else:
+                    attribute_dic[unnamed_attributes] = [attribute]
+        if ID_attribute != None:
+            ID = attribute_dic[ID_attribute]
+        elif parent_attribute != None:
+            ID = attribute_dic[parent_attribute] + "-" + feature + "-" + str(coords[0])
+        else:
+            ID = seqid + '-' + feature + '-' + str(coords[0])
+        if parent_attribute != None:
+            parent = attribute_dic[parent_attribute]
+        else:
+            parent = None
+        
+    
+
+
 def read_cegma_gff(cegma_gff,annotation_set_to_modify = None):
     """reads gff produced by CEGMA and returns AnnotationSet populated by CEGMA predictions"""
     modified_gff = read_to_string(cegma_gff).replace('\tFirst\t','\tCDS\t').replace('\tInternal\t','\tCDS\t').replace('\tTerminal\t','\tCDS\t').replace('KOG','Parent=KOG')
@@ -845,7 +885,7 @@ class ParentAnnotation():
                     ParentAnnotation objects nor BaseAnnotation object. Get your act together"
             return (min(coords_list),max(coords_list))
     
-    def get_fasta(self, seq_type = "nucleotide"):
+    def get_fasta(self, seq_type = "nucleotide", longest=False):
         """Returns fasta of this annotation's sequence. If this feature has multiple subfeatures (e.g. this is a gene
         and it has multiple transcripts), the sequence of each subfeature will be an entry in the fasta string."""
         if len(self.child_list) > 0 and self.annotation_set != None:
@@ -875,7 +915,13 @@ class ParentAnnotation():
                 else:
                     for child in self.child_list:
                         fasta_list.append(self.annotation_set[child].get_fasta(seq_type=seq_type))
-                return '\n'.join(fasta_list)
+                if longest == True:
+                    seqlens = {}
+                    for seq in fasta_list:
+                        seqlens[len("".join(seq.split('\n')[1:]))] = seq
+                    return seqlens[max(list(seqlens))]
+                else:
+                    return '\n'.join(fasta_list)
     
 
 class Sequence(str):
@@ -916,8 +962,6 @@ class Sequence(str):
                     except KeyError:
                         newseq = newseq + 'X'
                     triplet = ""
-            #if len(newseq) < 1:
-            #    print seq
             if trimX:
                 if newseq[0] == 'X':
                     newseq = newseq[1:]
@@ -1071,5 +1115,31 @@ class Genome():
         self.variants = read_vcf(vcf)
     
 
-    
+class position_dic(dict):
+    def __init__(self, genome_sequence):
+        for seqid in genome_sequence:
+            self[seqid] = []
+            for position in range(len(genome_sequence[seqid])):
+                self[seqid].append(0)
+
+    def fill_from_annotations(self, annotation_set,feature,genome_sequence, fill_type = "coords"):
+        """will eventually accept "start" instead of "coords" for fill_type"""
+        for annotation in eval("annotation_set." + feature):
+            annotation_obj = eval("annotation_set." + feature)[annotation]
+            seqid = annotation_obj.seqid
+            coords = annotation_obj.get_coords()
+            for position in range(coords[0],coords[1] + 1):
+                self[seqid][position] = 1
+
+    def sliding_window_calculate(self, window_size, operation="sum"):
+        new_dic = {}
+        for seqid in self:
+            new_dic[seqid] = []
+            for position in self[seqid][:-1*window_size]:
+                val_list = self[seqid][position:position + window_size]
+                if operation == "sum":
+                    new_dic[seqid].append(sum(val_list))
+                elif operation == "average":
+                    new_dic[seqid].append(sum(val_list) * 1.0 / len(val_list))
+        return(copy.deepcopy(new_dic))
 
