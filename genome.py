@@ -748,13 +748,10 @@ class AnnotationSet():
     def read_cegma_gff(self, cegma_gff):
         read_cegma_gff(cegma_gff, annotation_set_to_modify = self)
     
-    def get_fasta(self,feature,seq_type = "nucleotide"):
+    def get_fasta(self,feature,seq_type = "nucleotide",longest=False):
         fasta_list = []
         for annotation in eval('self.' + feature):
-            if seq_type == "nucleotide":
-                fasta_list.append(eval('self.' + feature)[annotation].get_fasta(seq_type = "nucleotide"))
-            elif seq_type == "protein":
-                fasta_list.append(eval('self.' + feature)[annotation].get_fasta(seq_type = "protein"))
+                fasta_list.append(eval('self.' + feature)[annotation].get_fasta(seq_type = seqtype,longest = longest))
         return "\n".join(fasta_list)
         
     
