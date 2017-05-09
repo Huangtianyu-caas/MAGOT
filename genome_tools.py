@@ -161,7 +161,7 @@ def dna2orfs(fasta_location,output_file,from_atg = False,longest = False):
 
 
 def prep4apollo(genome_sequence, suppress_fasta = "False", output_directory = 'apollo_gffs', exon_fasta = None, full_length_seqs = None,
-                               exon_blast_csv = None, exonerate_output = None, other_gff = None, other_gff_format = 'gff3',
+                               exon_blast_csv = None, exonerate_output = None, starjuncs = None, other_gff = None, other_gff_format = 'gff3',
                                blast_evalue = '0.01', exonerate_percent = '50',output_empty_scaffolds = "False",
                                exonerate_intron_steps = "2000,5000,200000", mapping_threads = "1"):
     """takes evidence inputs and returns gff files to open in apollo"""
@@ -225,6 +225,8 @@ def prep4apollo(genome_sequence, suppress_fasta = "False", output_directory = 'a
         seqids = my_genome.annotations.get_all_seqids()
     for seqid in seqids:
         out = open(output_directory + '/' + sanitize_pathname(seqid) + '.gff','w')
+        if starjuncs != None:
+            out.write(genome.starjunc2gff(starjuncs,output = "string"))
         out.write(my_genome.write_apollo_gff(seqid, suppress_fasta = suppress_fasta))
         out.close()
     subprocess.call('rm -rf ' + output_directory + '/temp', shell = True)
@@ -337,7 +339,7 @@ def multithread_exonerate(query_fasta, database_fasta, threads, exonerate_option
     for cmd in running_cmds:
                 cmd.wait()
     subprocess.call("cat " + tempdir + "/*.exonerate",shell = True)
-    subrpocess.call('rm -rf ' + tempdir, shell = True)
+    subprocess.call('rm -rf ' + tempdir, shell = True)
 
     
 
@@ -358,7 +360,6 @@ def exclude_from_fasta(fasta, exclude_list, just_firstword = "False"):
         if not seqid_fixed in exlist:
             print '>' + seqid + '\n' + my_fasta.genome_sequence[seqid]
     
-
 
 
 if __name__ == "__main__":

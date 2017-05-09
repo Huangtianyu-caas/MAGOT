@@ -4,6 +4,9 @@
 import copy
 import StringIO
 
+import numpy
+
+verbose = True
 
 def tab2fasta(tab_file):
     tabs = ensure_file(tab_file)
@@ -425,42 +428,83 @@ def read_gff3(gff3,annotation_set_to_modify = None,gene_hierarchy = ['gene','mRN
         return(annotation_set)
 
 
-def read_gtf(gtf,annotation_set_to_modify = None, parent_attribute = None, ID_attribute = None):
+def read_gtf(gtf,annotation_set_to_modify = None, hierarchies = [[]]):
     gtf_file = ensure_file(gtf)
+    #debug
+    linesprocessed = 0
+    #
     if annotation_set_to_modify == None:
         annotation_set = AnnotationSet()
     else:
         annotation_set = annotation_set_to_modify
     for line in gtf_file:
-        fields = line.split('\t')
-        seqid = fields[0]
-        source = fields[1]
-        feature = fields[2]
-        coords = [int(fields[3]),int(fields[4])]
-        coords.sort()
-        score = fields[5]
-        strand = fields[6]
-        attributes = fields[8].split(';')
-        attribute_dic = {}
-        for attribute in attributes:
-            try:
-                attribute_dic[attribute.split()[0]] = attribute.split()[1]
-            except:
-                if unnamed_attributes in attribute_dic:
-                    attribute_dic[unnamed_attributes].append(attribute)
-                else:
-                    attribute_dic[unnamed_attributes] = [attribute]
-        if ID_attribute != None:
-            ID = attribute_dic[ID_attribute]
-        elif parent_attribute != None:
-            ID = attribute_dic[parent_attribute] + "-" + feature + "-" + str(coords[0])
-        else:
-            ID = seqid + '-' + feature + '-' + str(coords[0])
-        if parent_attribute != None:
-            parent = attribute_dic[parent_attribute]
-        else:
-            parent = None
-        
+        if line.count('\t') > 6 and line[0] != "#":
+            linesprocessed = linesprocessed + 1
+            fields = line.split('\t')
+            seqid = fields[0]
+            source = fields[1]
+            feature_type = fields[2]
+            coords = [int(fields[3]),int(fields[4])]
+            coords.sort()
+            score = fields[5]
+            strand = fields[6]
+            attributes = fields[8].split(';')
+            attribute_dic = {}
+            for attribute in attributes:
+                try:
+                    attribute_dic[attribute.split()[0]] = attribute.split()[1]
+                except:
+                    if unnamed_attributes in attribute_dic:
+                        attribute_dic[unnamed_attributes].append(attribute)
+                    else:
+                        attribute_dic[unnamed_attributes] = [attribute]
+            this_hierarchy = None
+            ID_attribute = None
+            parent_attribute = None
+            if hierarchies != [[]]:
+                for hierarchy in hierarchies:
+                    if hierarchy[0] in attribute_dic:
+                        this_hierarchy = hierarchy
+                        ID_attribute = this_hierarchy[0]
+                        if len(hierarchy) > 1:
+                            parent_attribute = hierarchy[1]
+            if ID_attribute != None:
+                ID = attribute_dic[ID_attribute]
+                del attribute_dic[ID_attribute]
+            elif parent_attribute != None:
+                ID = attribute_dic[parent_attribute] + "-" + feature_type + "-" + str(coords[0])
+            else:
+                ID = seqid + '-' + feature_type + '-' + str(coords[0])
+            if parent_attribute != None:
+                parent = attribute_dic[parent_attribute]
+                del attribute_dic[parent_attribute] 
+            else:
+                parent = None
+            if this_hierarchy != None:
+                if len(this_hierarchy) > 1:
+                    for hierarchy_parent in this_hierarchy[1:]:
+                        parentID = attribute_dic[hierarchy_parent]
+                        child_ID = attribute_dic[this_hierarchy[this_hierarchy.index(hierarchy_parent) - 1]]
+                        try:
+                            parent_of_parent_ID = attribute_dic[this_hierarchy[this_hierarchy.index(hierarchy_parent) + 1]]
+                        except:
+                            parent_of_parent_ID = None
+                        try:
+                            if child_ID in annotation_set[parentID].child_list:
+                                pass
+                            else:
+                                annotation_set[parentID].child_list.append(child_ID)
+                        except:
+                        #this should happen if parent doesn't exist
+                            eval('annotation_set.' + hierarchy_parent)[parentID] = ParentAnnotation(parendID, seqid, feature_type, child_list = [child_ID], parent = parent_of_parent_ID, annotation_set = annotation_set)
+                        if child_ID == ID:
+                            annotation_set[parentID].child_list.remove(child_ID)
+            eval('annotation_set.'+feature_type)[ID] = BaseAnnotation(ID, seqid, coords, feature_type, parent,
+                                                                      other_attributes = copy.copy(attribute_dic),
+                                                                      annotation_set = annotation_set)
+    if annotation_set_to_modify == None:
+        return annotation_set
+    print linesprocessed
     
 
 
@@ -751,7 +795,7 @@ class AnnotationSet():
     def get_fasta(self,feature,seq_type = "nucleotide",longest=False):
         fasta_list = []
         for annotation in eval('self.' + feature):
-                fasta_list.append(eval('self.' + feature)[annotation].get_fasta(seq_type = seqtype,longest = longest))
+                fasta_list.append(eval('self.' + feature)[annotation].get_fasta(seq_type = seq_type,longest = longest))
         return "\n".join(fasta_list)
         
     
@@ -777,7 +821,13 @@ class BaseAnnotation():
                 for parent_feature_type in create_parents_chain:
                     if not parent_feature_type in annotation_set.__dict__:
                         setattr(annotation_set,parent_feature_type,{})
-        #checks if parent features present:
+            #gets parent object type if parent present but create_parents_chain = None
+            if parent != None and create_parents_chain == None:
+                try:
+                    create_parents_chain = [annotation_set[parent].feature_type]
+                except:
+                    create_parents_chain = ["unkown_parent"]
+            #checks if parent features present:    
             if parent == None:
                 pass
             #checks if parent needs to be created
@@ -894,7 +944,11 @@ class ParentAnnotation():
                     child_dict = {}
                     for child in self.child_list:
                         child_obj = self.annotation_set[child]
-                        child_dict[child_obj.coords] = child_obj.get_seq()
+                        try:
+                            child_dict[child_obj.coords] = child_obj.get_seq()
+                        except AttributeError:
+                            print "ParentAnnotation has both ParentAnnotation and BaseAnnotation children!"
+                            print self.ID
                         strand = child_obj.strand
                     children_in_correct_order = list(child_dict)
                     children_in_correct_order.sort()
@@ -911,14 +965,23 @@ class ParentAnnotation():
                     fasta_list.append('>' + self.ID + '\n' + new_seq)
                 else:
                     for child in self.child_list:
-                        fasta_list.append(self.annotation_set[child].get_fasta(seq_type=seq_type))
+                        try:
+                            fasta_list.append(self.annotation_set[child].get_fasta(seq_type=seq_type))
+                        except AttributeError:
+                            print "ParentAnnotation has both ParentAnnotation and BaseAnnotation children!"
+                            print self.ID
                 if longest == True:
                     seqlens = {}
                     for seq in fasta_list:
                         seqlens[len("".join(seq.split('\n')[1:]))] = seq
                     return seqlens[max(list(seqlens))]
                 else:
-                    return '\n'.join(fasta_list)
+                    try:
+                        return '\n'.join(fasta_list)
+                    except:
+                        return ""
+            else: return ""
+        else: return ""
     
 
 class Sequence(str):
@@ -1113,30 +1176,43 @@ class Genome():
     
 
 class position_dic(dict):
-    def __init__(self, genome_sequence):
+    def __init__(self, genome_sequence, dtype=bool):
         for seqid in genome_sequence:
-            self[seqid] = []
-            for position in range(len(genome_sequence[seqid])):
-                self[seqid].append(0)
+            self[seqid] = numpy.zeros(len(genome_sequence[seqid]),dtype=dtype)
 
-    def fill_from_annotations(self, annotation_set,feature,genome_sequence, fill_type = "coords"):
+    def fill_from_annotations(self, annotation_set, feature, fill_type = "coords"):
         """will eventually accept "start" instead of "coords" for fill_type"""
         for annotation in eval("annotation_set." + feature):
             annotation_obj = eval("annotation_set." + feature)[annotation]
             seqid = annotation_obj.seqid
             coords = annotation_obj.get_coords()
-            for position in range(coords[0],coords[1] + 1):
-                self[seqid][position] = 1
+            if fill_type == "coords":
+                for position in range(coords[0] - 1,coords[1]):
+                    self[seqid][position] = 1
+            elif fill_type == "start":
+                self[seqid][coords[0]] = 1
 
-    def sliding_window_calculate(self, window_size, operation="sum"):
+    def at_content(self, genome_sequence):
+        for seqid in self:
+            for position in range(len(self[seqid])):
+                if genome_sequence[seqid][position] in "ATat":
+                    self[seqid][position] = 1
+
+    def sliding_window_calculate(self, window_size, window_jump = 1, operation = "sum"):
         new_dic = {}
         for seqid in self:
-            new_dic[seqid] = []
-            for position in self[seqid][:-1*window_size]:
-                val_list = self[seqid][position:position + window_size]
-                if operation == "sum":
-                    new_dic[seqid].append(sum(val_list))
-                elif operation == "average":
-                    new_dic[seqid].append(sum(val_list) * 1.0 / len(val_list))
+            if len(self[seqid]) > window_size:
+                new_dic[seqid] = []
+                for position in range(len(self[seqid][:-1 * window_size]) / window_jump):
+                    window_start = position * window_jump
+                    window_sum = numpy.sum(self[seqid][window_start:window_start + window_size])
+                    if operation == "sum":
+                        new_dic[seqid].append(window_sum)
+                    elif operation == "average":
+                        new_dic[seqid].append(window_sum * 1.0 / window_size)
+                    if window_start % 10000000 == 0 and verbose:
+                        print "processed " + seqid + " to position " + str(position)
+                if verbose:
+                    print "processed " + seqid
         return(copy.deepcopy(new_dic))
 
