@@ -236,7 +236,7 @@ def prep4apollo(genome_sequence, suppress_fasta = "False", output_directory = 'a
         out = open(output_directory + '/' + sanitize_pathname(seqid) + '.gff','w')
         if starjuncs != None:
             if seqid in starjunc_dic:
-                out.write('\n'.join(starjunc_dic[seqid]))
+                out.write('\n'.join(starjunc_dic[seqid]) + '\n')
         out.write(my_genome.write_apollo_gff(seqid, suppress_fasta = suppress_fasta))
         out.close()
     subprocess.call('rm -rf ' + output_directory + '/temp', shell = True)
