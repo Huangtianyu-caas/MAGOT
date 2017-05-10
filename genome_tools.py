@@ -224,7 +224,7 @@ def prep4apollo(genome_sequence, suppress_fasta = "False", output_directory = 'a
     else:
         seqids = my_genome.annotations.get_all_seqids()
     if starjuncs != None:
-        starjunc_dic=[]
+        starjunc_dic = {}
         starjunc_list = genome.starjunc2gff(starjuncs,output = "list")
         for junc in starjunc_list:
             seqid = junc.split('\t')[0]
