@@ -1190,7 +1190,7 @@ class position_dic(dict):
                 for position in range(coords[0] - 1,coords[1]):
                     self[seqid][position] = 1
             elif fill_type == "start":
-                self[seqid][coords[0]] = 1
+                self[seqid][coords[0] - 1] = 1
 
     def at_content(self, genome_sequence):
         for seqid in self:

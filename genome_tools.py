@@ -371,6 +371,71 @@ def exclude_from_fasta(fasta, exclude_list, just_firstword = "False"):
             print '>' + seqid + '\n' + my_fasta.genome_sequence[seqid]
     
 
+def mask_from_gff(genome_sequence,gff,mask_type="soft", overwrite_softmask="True", feature_type="CDS"):
+    genome_dict = {}
+    genome_file = open(genome_sequence)
+    working_seqid = ""
+    for line in genome_file:
+        if line[0] == ">":
+            working_seqid = line.split()[0][1:].replace('\r','').replace('\n','')
+            genome_dict[working_seqid] = []
+        else:
+            if overwrite_softmask in ["True","T","true","t","TRUE"]: 
+                genome_dict[working_seqid].extend(list(line.replace('\r','').replace('\n','').upper()))
+            elif overwrite_softmask in ["False","F","false","f","FALSE"]:
+                genome_dict[working_seqid].extend(list(line.replace('\r','').replace('\n','')))
+            else:
+                print "Invalid option for 'overwrite_softmask', argument accepts 'True' or 'False'"
+                return None
+    gff_file = open(gff)
+    for line in gff_file:
+        if line.count('\t') > 5:
+            fields = line.split('\t')
+            if fields[2] == feature_type:
+                start = int(fields[3])
+                stop = int(fields[4])
+                if mask_type == "soft":
+                    genome_dict[fields[0]][start - 1:stop] = list("".join(genome_dict[fields[0]][start - 1:stop]).lower())
+                elif mask_type == "hard":
+                    nlist = []
+                    for i in range(1 + stop - start):
+                        nlist.append('N')
+                    genome_dict[fields[0]][start - 1:stop] = nlist
+                else:
+                    print "Invalid option for mask_type, argument accepts 'soft' and 'hard'"
+                    return None
+    for seqid in genome_dict:
+        print ">" + seqid + '\n' + "".join(genome_dict[seqid])
+    
+
+def replace_names(text_file,replace_table, name_end = " "):
+    """Yes, this is because I'm not good with sed or awk. Judge me all you want. This takes a input file and replaces
+    words in it (that end with the "name_end" variable, which can be set to "") according to an input table. Table format
+    should be "first word (or phrase) to replace{tab}replacement word{line return}" and so on."""
+    text = open(text_file)
+    replace = open(replace_table)
+    replace_dict = {}
+    for line in replace:
+        fields = line.split('\t')
+        replace_dict[fields[0] + name_end] = fields[1] + name_end
+    for line in text:
+        newline = line
+        for word in replace_dict:
+            if word in newline:
+                newline = newline.replace(word,replace_dict[word])
+        print newline
+        
+    
+def repeatmasker2augustushints(repeatmasker_gff):
+    gff = open(repeatmasker_gff)
+    for line in gff:
+        fields = line.split('\t')
+        print "\t".join(fields[0],fields[1],"nonexonpart",fields[3],fields[4],fields[5],".",".","pri=2;src=RM")
+    
+
+
+
+
 
 if __name__ == "__main__":
     main()
