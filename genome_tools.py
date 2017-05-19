@@ -429,9 +429,10 @@ def replace_names(text_file,replace_table, name_end = " "):
 def repeatmasker2augustushints(repeatmasker_gff):
     gff = open(repeatmasker_gff)
     for line in gff:
-        fields = line.split('\t')
-        print "\t".join(fields[0],fields[1],"nonexonpart",fields[3],fields[4],fields[5],".",".","pri=2;src=RM")
-    
+        if line.count('\t') > 5:
+            fields = line.split('\t')
+            print "\t".join(fields[0],fields[1],"nonexonpart",fields[3],fields[4],fields[5],".",".","pri=2;src=RM")
+
 
 
 
