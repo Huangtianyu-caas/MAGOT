@@ -33,7 +33,9 @@ def fasta2tab(fasta_file):
 def ensure_file(potential_file):
     """takes an input that can be either a file location, opened file, or string, and returns an opened file or file like object.
     Used to make downstream applications robust to different input types"""
-    if type(potential_file).__name__ == "file":
+    if potential_file == None:
+        return None
+    elif type(potential_file).__name__ == "file":
         return potential_file
     else:
         try:
@@ -932,10 +934,12 @@ class ParentAnnotation():
                     ParentAnnotation objects nor BaseAnnotation object. Get your act together"
             return (min(coords_list),max(coords_list))
     
-    def get_fasta(self, seq_type = "nucleotide", longest=False):
+    def get_fasta(self, seq_type = "nucleotide", longest=False, genomic = False):
         """Returns fasta of this annotation's sequence. If this feature has multiple subfeatures (e.g. this is a gene
         and it has multiple transcripts), the sequence of each subfeature will be an entry in the fasta string."""
-        if len(self.child_list) > 0 and self.annotation_set != None:
+        if genomic == True:
+            pass
+        elif len(self.child_list) > 0 and self.annotation_set != None:
             if self.annotation_set.genome != None:
                 fasta_list = []
                 child_type = self.annotation_set[self.child_list[0]].__class__.__name__
@@ -1059,17 +1063,28 @@ class Sequence(str):
 
 class GenomeSequence(dict):
     """genome sequence class, currently takes input in multi-fasta format."""
-    def __init__(self,genome_sequence = None):
+    def __init__(self,genome_sequence = None, truncate_names = False):
         #reads input file location, file, or string
-        sequence_string = read_to_string(genome_sequence)
+        sequence_file = ensure_file(genome_sequence)
         #breaks sequence into sequence blocks (contigs, scaffolds, or chromosomes), adds sequence 
         #   from each block as dictionary entry into self with block name as key.
-        if sequence_string != None:
-            for locus in sequence_string.split('>')[1:]:
-                block = locus.split('\n')
-                seqid = block[0]
-                seqstring = Sequence("".join(block[1:]))
-                self[seqid] = seqstring
+        if sequence_file != None:
+            seq = ""
+            seqname = ""
+            for line in sequence_file:
+                if line[0] == ">":
+                    if truncate_names == True:
+                        seqid = line[1:].replace('\r','').replace('\n','').split()[0]
+                    else:
+                        seqid = line[1:].replace('\r','').replace('\n','')
+                    if seq != "":
+                        self[seqname] = seq
+                        seq = ""
+                    seqname = seqid
+                else:
+                    seq = seq + line.replace('\r','').replace('\n','')
+            if seq != "":
+                self[seqname] = seqself[seqname] = seq
 
     
 
@@ -1077,11 +1092,11 @@ class GenomeSequence(dict):
 class Genome():
     """genome class, which contains sequence and annotations. Annotations can be given as annotation_set object, gff3, cegma_gff,
     blast_csv, or exonerate_output (just set annotation_format)."""
-    def __init__(self,genome_sequence = None, annotations = None, varients = None, annotation_format = 'annotation_set'):
+    def __init__(self,genome_sequence = None, annotations = None, varients = None, annotation_format = 'annotation_set', truncate_names = False):
         if genome_sequence.__class__.__name__ == 'GenomeSequence' or genome_sequence == None:
             self.genome_sequence = genome_sequence
         else:
-            self.genome_sequence = GenomeSequence(genome_sequence)
+            self.genome_sequence = GenomeSequence(genome_sequence, truncate_names = truncate_names)
         if annotations != None:
             if annotations.__class__.__name__ == "AnotationSet" and annotation_format == 'annotation_set':
                 self.annotations = annotations
@@ -1180,17 +1195,22 @@ class position_dic(dict):
         for seqid in genome_sequence:
             self[seqid] = numpy.zeros(len(genome_sequence[seqid]),dtype=dtype)
 
-    def fill_from_annotations(self, annotation_set, feature, fill_type = "coords"):
-        """will eventually accept "start" instead of "coords" for fill_type"""
+    def fill_from_annotations(self, annotation_set, feature, fill_type = "coords",fill_with = "1"):
+        """accepts "start" and "coords" for fill_type"""
         for annotation in eval("annotation_set." + feature):
             annotation_obj = eval("annotation_set." + feature)[annotation]
             seqid = annotation_obj.seqid
             coords = annotation_obj.get_coords()
+            try:
+                parent = annotation_obj.parent
+            except:
+                pass
+            ID = annotation_obj.ID
             if fill_type == "coords":
                 for position in range(coords[0] - 1,coords[1]):
-                    self[seqid][position] = 1
+                    self[seqid][position] = eval(fill_with)
             elif fill_type == "start":
-                self[seqid][coords[0] - 1] = 1
+                self[seqid][coords[0] - 1] = eval(fill_with)
 
     def at_content(self, genome_sequence):
         for seqid in self:

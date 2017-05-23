@@ -434,7 +434,55 @@ def repeatmasker2augustushints(repeatmasker_gff):
             print "\t".join([fields[0],fields[1],"nonexonpart",fields[3],fields[4],fields[5],".",".","pri=2;src=RM"])
 
 
+def extract_upstream_downstream(genome_sequence,gff,sequence_length,stream,feature_type = "gene",namefrom = "ID", truncate_names = "True"):
+    sequence_dict = genome.GenomeSequence(genome_sequence, truncate_names = eval(truncate_names))
+    output_seqs = []
+    for line in open(gff):
+        if line.count('\t') > 5 and line[0] != "#":
+            fields = line.split('\t')
+            if fields[2] == feature_type:
+                name = None
+                coords = [int(fields[3]), int(fields[4])]
+                coords.sort()
+                for attribute in fields[-1].split(';'):
+                    if namefrom == attribute.split('=')[0]:
+                        name = attribute.split('=')[1].replace('\r','').replace('\n','')
+                if name == None:
+                    name = 'seq'+len(output_seqs)
+                if stream == "up" and fields[6] == "+" or stream == "down" and fields[6] == "-":
+                    stop = coords[0] - 1
+                    sequence = sequence_dict[fields[0]][stop - int(sequence_length):stop]
+                elif stream == "down" and fields[6] == "+" or stream == "up" and fields[6] == "-":
+                    start = coords[1]
+                    sequence = genome.Sequence(sequence_dict[fields[0]][start:start + int(sequence_length)]).reverse_compliment()
+                output_seqs.append('>' + name + '\n' + sequence)
+    print "\n".join(output_seqs)
+    
 
+def get_seq_from_fasta(genome_sequence, seq_name, truncate_names = "False"):
+    my_genome = genome.Genome(genome_sequence, truncate_names = eval(truncate_names))
+    print my_genome.get_scaffold_fasta(seq_name)
+
+
+def composition_by_site(fasta_alignment):
+    seq_dict = genome.GenomeSequence(fasta_alignment)
+    position_list = [["a","t","c","g"]]
+    for site in range(len(seq_dict[list(seq_dict)[0]])):
+        count_dict = {'a':0,'t':0,'c':0,'g':0}
+        allcounts = 0
+        list_entry = []
+        for seq in seq_dict:
+            if seq_dict[seq][site].lower() in count_dict:
+                count_dict[seq_dict[seq][site].lower()] = count_dict[seq_dict[seq][site].lower()] + 1
+                allcounts = allcounts + 1
+        for nucleotide in position_list[0]:
+            list_entry.append(str(count_dict[nucleotide] * 1.0 / allcounts))
+        position_list.append(list_entry)
+    for position in position_list:
+        print "\t".join(position)
+
+
+    
 
 
 
