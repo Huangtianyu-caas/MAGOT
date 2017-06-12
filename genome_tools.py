@@ -6,6 +6,7 @@ except:
     print "it appears that genome_tools.py is not in the same directory as genome.py and genome_tools_config.py"
 import sys
 import subprocess
+import numpy
 
 
 def main():
@@ -14,6 +15,9 @@ def main():
     command = program + "("
     if program == '-h' or program == '-help' or program == '--help' or program == 'help':
         help_func()
+        return None
+    elif sys.argv[2] in ['-h','--help','-help','help','--h']:
+        program_help_func(program)
         return None
     for argument in arguments:
         if '=' in argument:
@@ -27,6 +31,8 @@ def main():
         command = command + ')'    
     eval(command)
 
+def program_help_func(program):
+    print 'hey'
 
 
 def sanitize_pathname(pathname):
@@ -301,13 +307,13 @@ def get_CDS_peptides(genome_sequence,gff,output_location,gene_name_filters = [],
                     out.write('>' + pep_name + '\n' + CDSdict[CDS][1] + '\n')
 
 
-def gff2fasta(genome_sequence,gff,from_exons = "False",seq_type = "nucleotide", longest = "False"):
+def gff2fasta(genome_sequence,gff,from_exons = "False",seq_type = "nucleotide", longest = "False", genomic = "False"):
     my_genome = genome.Genome(genome_sequence)
     if from_exons == "True":
-        my_genome.read_gff3(gff, features_to_ignore = "CDS", features_to_replace = [('exon','CDS')])
+        my_genome.read_gff(gff, features_to_ignore = "CDS", features_to_replace = [('exon','CDS')])
     else:
-        my_genome.read_gff3(gff)
-    print my_genome.annotations.get_fasta('gene',seq_type = seq_type, longest=eval(longest))
+        my_genome.read_gff(gff)
+    print my_genome.annotations.get_fasta('gene',seq_type = seq_type, longest=eval(longest), genomic = eval(genomic))
 
 
 def starjunc2gff(starjunc_file, output = 'stdout'):
@@ -448,14 +454,15 @@ def extract_upstream_downstream(genome_sequence,gff,sequence_length,stream,featu
                     if namefrom == attribute.split('=')[0]:
                         name = attribute.split('=')[1].replace('\r','').replace('\n','')
                 if name == None:
-                    name = 'seq'+len(output_seqs)
+                    name = 'seq' + str(len(output_seqs))
                 if stream == "up" and fields[6] == "+" or stream == "down" and fields[6] == "-":
                     stop = coords[0] - 1
                     sequence = sequence_dict[fields[0]][stop - int(sequence_length):stop]
                 elif stream == "down" and fields[6] == "+" or stream == "up" and fields[6] == "-":
                     start = coords[1]
                     sequence = genome.Sequence(sequence_dict[fields[0]][start:start + int(sequence_length)]).reverse_compliment()
-                output_seqs.append('>' + name + '\n' + sequence)
+                if len(sequence) == int(sequence_length):
+                    output_seqs.append('>' + name + '\n' + sequence)
     print "\n".join(output_seqs)
     
 
@@ -481,10 +488,158 @@ def composition_by_site(fasta_alignment):
     for position in position_list:
         print "\t".join(position)
 
+   
+def at_content_from_fasta(fasta):
+    fasta_file = open(fasta)
+    firstline = True
+    for line in fasta_file:
+        if line == "\n":
+            continue
+        elif '>' in line:
+            if firstline:
+                name = line[1:].replace('\n','').replace('\r','') + '\t'
+                firstline = False
+            else:
+                print name + str(ats) + '\t' + str(gcs)
+                name = line[1:].replace('\n','').replace('\r','') + '\t'
+            ats = 0
+            gcs = 0
+        else:
+            ats = ats + line.upper().count('A') + line.upper().count('T')
+            gcs = gcs + line.upper().count('G') + line.upper().count('C')
+    print name + str(ats) + '\t' + str(gcs)
+    
 
+def convert_gff(gff, input_format, output_format):
+    """converts gff from any of the many formats handled by this program to any format this program can output to.
+    Currently accepts as input: gff3 (with parent and ID attributes), augustus, RepeatMasker, CEGMA
+    Currently accepts as output: gff3"""
+    if input_format == 'gff3':
+        presets = None
+    else:
+        presets = input_format
+    if output_format == 'gff3':
+        gff_format = "simple gff3"
+    else:
+        print "currently only writes 'gff3' format"
+        return None
+    annotations = genome.read_gff(gff, presets = presets)
+    print genome.write_gff(annotations, gff_format)
+
+
+def purge_overlaps(gff1, gff_to_purge):
+    purge_dict = {}
+    for line in open(gff1):
+        if line.count('\t') > 6:
+            x=line.split('\t')
+            if x[0] in purge_dict:
+                purge_dict[x[0]].append([int(x[3]),int(x[4])])
+            else:
+                purge_dict[x[0]] = [[int(x[3]),int(x[4])]]
+    for line in open(gff_to_purge):
+        printline = True
+        if line.count('\t') > 6:
+            x=line.split('\t')
+            if x[0] in purge_dict:
+                coords = [int(x[3]),int(x[4])]
+                for purge_coords in purge_dict[x[0]]:
+                    if purge_coords[0] < coords[0] < purge_coords[1] or purge_coords[0] < coords[1] < purge_coords[1] or coords[0] < purge_coords[0] < coords[1]:
+                        printline = False
+                        continue
+            if printline:
+                print line[:-1]
+
+
+
+def besthits_from_psl(psl):
+    score_dict = {}
+    for line in open(psl):
+        if line != "":
+            if line[0] not in ['p','\n','m','-','\t',' ']:
+                fields = line.split('\t')
+                try:
+                    qID = fields[9]
+                    score = int(fields[0]) - int(fields[1])
+                    if qID in score_dict:
+                        if score > score_dict[qID][0]:
+                            score_dict[qID] = [score,line[:-1]]
+                    else:
+                        score_dict[qID] = [score,line[:-1]]
+                except:
+                    print line
+                    return None
+            else:
+                print line[:-1]
+    for qID in score_dict:
+        print score_dict[qID][1]
     
 
 
+
+
+def depth_from_gff(depth_file, gff, features = "['CDS','intron','upstream','downstream']", stream_length = '1000'):
+    my_annotations = genome.read_gff(gff)
+    missing_list = []
+    features_list = eval(features)
+    depth_array_lens = {}
+    for line in open(depth_file):
+        seqid = line.split()[0]
+        if seqid in depth_array_lens:
+            depth_array_lens[seqid] = depth_array_lens[seqid] + 1
+        else:
+            depth_array_lens[seqid] = 1
+    depth_arrays = {}
+    for seqid in depth_array_lens:
+        depth_arrays[seqid] = numpy.zeros(depth_array_lens[seqid],dtype = int)
+    for line in open(depth_file):
+        fields = line.split()
+        if len(fields) > 1:
+            depth_arrays[fields[0]][int(fields[1]) - 1] = int(fields[2])
+    if "CDS" in features_list:
+        print "#CDS counts"
+        transcript_CDS_dict = {}
+        for CDSID in my_annotations.CDS:
+            CDS = my_annotations.CDS[CDSID]
+            if CDS.seqid in depth_arrays:
+                covsum = sum(depth_arrays[CDS.seqid][CDS.coords[0]-1:CDS.coords[1]])
+            else:
+                missing_list.append(CDS.parent + ' on ' + CDS.seqid)
+            if CDS.parent in transcript_CDS_dict:
+                transcript_CDS_dict[CDS.parent] = transcript_CDS_dict[CDS.parent] + covsum
+            else:
+                transcript_CDS_dict[CDS.parent] = covsum
+        for transcript in transcript_CDS_dict:
+            print transcript + '\t' + str(transcript_CDS_dict[transcript])
+    if 'upstream' in features_list:
+        print "#upstream " + stream_length + "bp counts"
+        for transcriptID in my_annotations.transcript:
+            transcript = my_annotations.transcript[transcriptID]
+            if transcript.strand == "+":
+                stop = transcript.get_coords()[0] - 1
+                start = stop - int(stream_length)
+                if start < 0:
+                    start = 0
+            elif transcript.strand == "-":
+                start = transcript.get_coords()[1]
+                stop = start + int(stream_length)
+            if transcript.seqid in depth_arrays:
+                covsum = sum(depth_arrays[transcript.seqid][start:stop])
+            else:
+                missing_list.append(transcriptID + ' on ' + transcript.seqid)
+            print transcriptID + '\t' + str(covsum)
+    if len(missing_list) > 0:
+        print "#missing from depth file"
+        for transcript_info in list(set(missing_list)):
+            print transcript_info
+        
+    
+    
+    
+    
+
+    
+    
+    
 
 if __name__ == "__main__":
     main()

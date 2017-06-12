@@ -162,12 +162,13 @@ def read_exonerate(exonerate_output,annotation_set_to_modify = None):
         annotation_set = AnnotationSet()
     else:
         annotation_set = annotation_set_to_modify
-    exonerate_lines = read_to_string(exonerate_output).split('\n')
+    exonerate_lines = ensure_file(exonerate_output)
     gfflines = []
     IDdic = {}
     qname = ""
     tname = ""
-    for line in exonerate_lines:
+    for original_line in exonerate_lines:
+        line = original_line.replace('\r','').replace('\n','')
         if line[:16] == "         Query: ":
             qname = line[16:]
         elif line[:16] == "        Target: ":
@@ -186,7 +187,7 @@ def read_exonerate(exonerate_output,annotation_set_to_modify = None):
             else:
                 IDdic[ID] = 1
             gfflines.append(vulgar2gff(vulgar_line_list))
-    read_gff3("\n".join(gfflines), annotation_set_to_modify = annotation_set)
+    read_gff("\n".join(gfflines), annotation_set_to_modify = annotation_set)
     if annotation_set_to_modify == None:
         return annotation_set
     
@@ -296,224 +297,191 @@ def write_longform_gff(annotation_set,keep_UTR_features = False):
                     break
     return '\n'.join(gfflines)
 
+def write_gff(annotation_set, gff_format = "simple gff3"):
+    gff_lines = []
+    for attribute in annotation_set.__dict__:
+        if type(annotation_set.__dict__[attribute]) == dict:
+            if len(annotation_set.__dict__[attribute]) > 0:
+                if annotation_set.__dict__[attribute][list(annotation_set.__dict__[attribute])[0]].__class__.__name__ == "ParentAnnotation" or annotation_set.__dict__[attribute][list(annotation_set.__dict__[attribute])[0]].__class__.__name__ == "BaseAnnotation":
+                    if annotation_set.__dict__[attribute][list(annotation_set.__dict__[attribute])[0]].parent == None:
+                        for annotationID in annotation_set.__dict__[attribute]:
+                            annotation = annotation_set.__dict__[attribute][annotationID]
+                            gff_lines.append(annotation.get_gff(gff_format))
+    return '\n'.join(gff_lines)
+                        
+    
 
-def read_gff3(gff3,annotation_set_to_modify = None,gene_hierarchy = ['gene','mRNA',['CDS','five_prime_UTR','three_prime_UTR']],
-              other_hierarchies = [['match','match_part']],features_to_ignore = ['exon'],
-              features_to_replace = [('protein_match','match'),('expressed_sequence_match','match')]):
-    #reads gff3 to string if supplied as a file or file location
-    gff_file = ensure_file(gff3)
-    #reformates features_to_replace to be used in later command
-    for feature in features_to_replace[:]:
-        features_to_replace.append(str(feature))
-        features_to_replace.remove(feature)
-    #checks if annotation_set is given and creates annotation_set if not
+def read_gff(gff,annotation_set_to_modify = None, base_features = ['CDS','match_part','similarity','region'],features_to_ignore = ['exon'],
+    gff_version = "auto", parents_hierarchy = [], features_to_replace = [], IDfield = "ID", parent_field = "Parent", presets = None):
+    """Assumptions of file:    
+    Relatively consistent, nothing crazy like mixed gff3 and gff2
+    
+    If a parent's children are base features, they should NOT overlap. E.g. if your file has exons and CDS, only
+    give CDS as base_features and give exons as features_to_ignore.
+    
+    Although parent feature types may be used multiply in hierarchies, any given base feature
+    will only be present in one hierarchy
+    
+    If parent features are not represented by lines (e.g. minimal gff2 format or cegma), they
+    can be inferred from defline attributes given in parents_hierarchy. It is expected that the order they
+    are given is consistent with the hierarchy (e.g. ['mRNA','gene']). If an underscore is used in
+    this defline, the word before the underscore is used as the parent feature type. The "Parent"
+    defline attribute is reserved for the imediate parent of the feature- if not given, this will be assumed to
+    be the lowest-level parent specified in defline.
+    """
+    replace_dict = {"\n":"","\r":""}
+    presets_dict = {}
+    presets_dict["augustus"] = "features_to_ignore = ['gene','transcript','stop_codon','terminal','internal','initial','intron',\
+        'start_codon','single']\nparent_field = None\nparents_hierarchy = ['transcript_id','gene_id']\nIDfield = None"
+    presets_dict["RepeatMasker"] = "parent_field = None\nIDfield = 'Target'"
+    presets_dict["CEGMA"] = "parent_field = ''\nIDfield = None\nparents_hierarchy = ['gene_id\nfeatures_to_replace = \
+        [['First','CDS']['Internal','CDS']['Terminal','CDS']['Single','CDS']]\ngff_version = 3"
+    if presets in presets_dict:
+        exec(presets_dict[presets])
+    version = gff_version
+    gff_file = ensure_file(gff)
+    for feature in features_to_replace:
+        replace_dict["\t" + feature[0] + "\t"] = "\t" + feature[1] + "\t"
     if annotation_set_to_modify == None:
         annotation_set = AnnotationSet()
     else:
         annotation_set = annotation_set_to_modify
-    #this dictionary helps generate names if features are passed with parents but not IDs
-    generate_ID_from_parent_dict = {}
     #this dictionary helps generate names if features passed with identical ID fields
     generate_new_ID_dict = {}
-    #Fills annotiation_set
-    for gff_line_with_return in gff_file:
-        gff_line = gff_line_with_return.replace('\n','').replace('\r','')
-        if len(gff_line) > 1:
-            if gff_line[0] != '#' and gff_line.count('\t') == 8:
-                try:
-                    del parent
-                except:
-                    pass
-                try:
-                    del ID
-                except:
-                    pass
-                gff_fields = gff_line.split('\t')
-                other_attributes = {}
-                seqid = gff_fields[0]
-                other_attributes['source'] = gff_fields[1]
-                feature_type = eval('gff_fields[2].replace' + '.replace'.join(features_to_replace))
-                other_attributes['score'] = gff_fields[5]
-                other_attributes['strand'] = gff_fields[6]
-                for additional_attribute in gff_fields[8].split(';'):
-                    if '=' in additional_attribute:
-                        attr_split = additional_attribute.split('=')
-                        if attr_split[0] == 'ID':
-                            ID = attr_split[1]
-                        elif attr_split[0] == 'Parent':
-                            parent = attr_split[1]
-                        else:
-                            other_attributes[attr_split[0]] = attr_split[1]
-                #checks for ID and/or parent in attribute field
-                try:
-                    ID
-                except NameError:
-                    try:
-                        ID_base = parent + '-' + feature_type
-                        if not ID_base in generate_ID_from_parent_dict:
-                            generate_ID_from_parent_dict[ID_base] = 0
-                        ID = parent + '-' + feature_type + str(generate_ID_from_parent_dict[ID_base])
-                        generate_ID_from_parent_dict[ID_base] = generate_ID_from_parent_dict[ID_base] + 1
-                    except NameError:
-                        print "This gff (or at least one feature therein) seems to have an attributes field without\
-                        'ID' or 'Parent' varaibles. This is not yet supported."
-                        return
-                #checks if feature with same ID already exists, generates a new ID if so. This should only happen with
-                #base level features in dumb gff3s, otherwise something is wrong.
-                try:
-                    annotation_set[ID]
-                    if ID in generate_new_ID_dict:
-                        generate_new_ID_dict[ID] = generate_new_ID_dict[ID] + 1
-                    else:
-                        generate_new_ID_dict[ID] = 1
-                    ID = ID + '_' + str(generate_new_ID_dict[ID])
-                except:
-                    pass
-                #checks if feature_type in annotation_set, adds if not unless in features_to_ignore
-                if not feature_type in annotation_set.__dict__ and not feature_type in features_to_ignore:
-                    setattr(annotation_set, feature_type, {})
-                #sets parent to None if does not exist
-                try:
-                    parent
-                except NameError:
-                    parent = None
-                #creates annotations
-                if feature_type in gene_hierarchy[-1] :
-                    coords_list = [int(gff_fields[3]),int(gff_fields[4])]
-                    coords_list.sort()
-                    coords=tuple(coords_list)
-                    if feature_type == 'CDS':
-                        renamed_feature_type = 'CDS'
-                    else:
-                        renamed_feature_type = 'UTR'
-                    eval('annotation_set.' + renamed_feature_type)[ID] = BaseAnnotation(ID,seqid,coords,renamed_feature_type,parent,
-                                                                              other_attributes = copy.copy(other_attributes),
-                                                                              annotation_set = annotation_set)
-                elif feature_type in gene_hierarchy:
-                    make_feature = True
-                    renamed_feature_type = feature_type
-                    if len(gene_hierarchy) > 2:
-                        if feature_type == gene_hierarchy[1]:
-                            renamed_feature_type = 'transcript'
-                    if make_feature:
-                        eval('annotation_set.' + renamed_feature_type)[ID] = ParentAnnotation(ID, seqid, renamed_feature_type,parent = parent,
-                                                                                  annotation_set = annotation_set, other_attributes = copy.copy(other_attributes))
-                elif feature_type in features_to_ignore:
-                    pass
-                else:
-                    in_hierarchy = False
-                    for other_hierarchy in other_hierarchies:
-                        if feature_type == other_hierarchy[-1]:
-                            in_hierarchy = True
-                            coords_list = [int(gff_fields[3]),int(gff_fields[4])]
-                            coords_list.sort()
-                            coords=tuple(coords_list)
-                            create_parents_chain = other_hierarchy[:-1]
-                            create_parents_chain.reverse()
-                            eval('annotation_set.' + feature_type)[ID] = BaseAnnotation(ID, seqid, coords, feature_type, parent,
-                                                                              other_attributes = copy.copy(other_attributes),
-                                                                              annotation_set = annotation_set,
-                                                                              create_parents_chain = create_parents_chain)
-                        elif feature_type in other_hierarchy:
-                            in_hierarchy = True
-                            eval('annotation_set.' + feature_type)[ID] = ParentAnnotation(ID, seqid, feature_type, parent = parent,
-                                                                                          annotation_set = annotation_set, other_attributes = copy.copy(other_attributes))
-                    if not in_hierarchy:
-                        coords_list = [int(gff_fields[3]),int(gff_fields[4])]
-                        coords_list.sort()
-                        coords=tuple(coords_list)
-                        eval('annotation_set.' + feature_type)[ID] = BaseAnnotation(ID, seqid, coords, feature_type, parent,
-                                                                              other_attributes = copy.copy(other_attributes),
-                                                                              annotation_set = annotation_set,
-                                                                              create_parents_chain = None)
-    if annotation_set_to_modify == None:
-        return(annotation_set)
-
-
-def read_gtf(gtf,annotation_set_to_modify = None, hierarchies = [[]]):
-    gtf_file = ensure_file(gtf)
-    #debug
-    linesprocessed = 0
-    #
-    if annotation_set_to_modify == None:
-        annotation_set = AnnotationSet()
-    else:
-        annotation_set = annotation_set_to_modify
-    for line in gtf_file:
-        if line.count('\t') > 6 and line[0] != "#":
-            linesprocessed = linesprocessed + 1
+    #figures out which feature types are base annotations
+    base_dict = {}
+    #here we go folks
+    for original_line in gff_file:
+        if original_line[0] != "#" and original_line.count('\t') == 8:
+            line = original_line
+            for string in replace_dict:
+                line = line.replace(string,replace_dict[string])
             fields = line.split('\t')
+            if version == "auto":
+                if "=" in fields[8]:
+                    version = 3
+                else:
+                    version = 2
+            ID = None
+            parent = None
+            other_attributes = {}
             seqid = fields[0]
-            source = fields[1]
+            other_attributes['source'] = fields[1]
             feature_type = fields[2]
+            if feature_type in features_to_ignore:
+                continue
             coords = [int(fields[3]),int(fields[4])]
             coords.sort()
-            score = fields[5]
+            coords = tuple(coords)
+            try:
+                other_attributes['score'] = float(fields[5])
+            except ValueError:
+                pass
             strand = fields[6]
-            attributes = fields[8].split(';')
-            attribute_dic = {}
-            for attribute in attributes:
+            if fields[7] in ['0','1','2']:
+                other_attributes['phase'] = int(fields[7])
+            defline_dict = {}
+            for defline_field in fields[8].split(';'):
+                if defline_field != "":
+                    if parent_field == "":
+                        defline_dict[""] = defline_field
+                    elif version == 2:
+                        if '"' in defline_field:
+                            defline_dict[defline_field.split()[0]] = defline_field.split('"')[1]
+                        else:
+                            try: defline_dict[defline_field.split()[0]] = defline_field.split()[1]
+                            except:
+                                print defline_field
+                                return None
+                    elif version == 3:
+                        defline_dict[defline_field.split('=')[0]] = defline_field.split('=')[1]
+            #Tries to figure out parent
+            if parent_field != None:
+                if parent_field in defline_dict:
+                    parent = defline_dict[parent_field]
+            elif parents_hierarchy != []:
+                for parent_type in parents_hierarchy:
+                    if parent_type in defline_dict:
+                        parent = defline_dict[parent_type]
+                        break
+            #Assigns ID
+            if IDfield != None:
                 try:
-                    attribute_dic[attribute.split()[0]] = attribute.split()[1]
-                except:
-                    if unnamed_attributes in attribute_dic:
-                        attribute_dic[unnamed_attributes].append(attribute)
-                    else:
-                        attribute_dic[unnamed_attributes] = [attribute]
-            this_hierarchy = None
-            ID_attribute = None
-            parent_attribute = None
-            if hierarchies != [[]]:
-                for hierarchy in hierarchies:
-                    if hierarchy[0] in attribute_dic:
-                        this_hierarchy = hierarchy
-                        ID_attribute = this_hierarchy[0]
-                        if len(hierarchy) > 1:
-                            parent_attribute = hierarchy[1]
-            if ID_attribute != None:
-                ID = attribute_dic[ID_attribute]
-                del attribute_dic[ID_attribute]
-            elif parent_attribute != None:
-                ID = attribute_dic[parent_attribute] + "-" + feature_type + "-" + str(coords[0])
+                    ID = defline_dict[IDfield]
+                except KeyError:
+                    if parent != None:
+                        ID = parent + '-' + feature_type
+            elif parent != None:
+                ID = parent + '-' + feature_type
             else:
-                ID = seqid + '-' + feature_type + '-' + str(coords[0])
-            if parent_attribute != None:
-                parent = attribute_dic[parent_attribute]
-                del attribute_dic[parent_attribute] 
+                ID = seqid + '-' + feature_type + fields[3]
+            #checks if ID already in annotation_set and adjusts ID if necessary
+            try:
+                annotation_set[ID]
+                if ID in generate_new_ID_dict:
+                    generate_new_ID_dict[ID] = generate_new_ID_dict[ID] + 1
+                    ID = ID + str(generate_new_ID_dict[ID])
+                else:
+                    generate_new_ID_dict[ID] = 2
+                    ID = ID + '2'
+            except KeyError:
+                pass
+            #Creates parents if necessary, adds to parent if exists
+            if parent != None:
+                child_to_assign = ID
+                for parent_feature_index in range(len(parents_hierarchy)):
+                    parent_feature = parents_hierarchy[parent_feature_index]
+                    if parent_feature in defline_dict:
+                        parent_feature_ID = defline_dict[parent_feature]
+                        parent_feature_type = parent_feature.split('_')[0]
+                        parents_parent = None
+                        if parent_feature_index != len(parents_hierarchy) - 1:
+                            for parents_parent_feature in parents_hierarchy[parent_feature_index + 1:]:
+                                if parents_parent_feature in defline_dict:
+                                    parents_parent = defline_dict[parents_parent_feature]                        
+                        if not parent_feature_type in annotation_set.__dict__:
+                            annotation_set.__dict__[parent_feature_type] = {}
+                        if parent_feature_ID in annotation_set.__dict__[parent_feature_type]:
+                            if not child_to_assign in annotation_set.__dict__[parent_feature_type][parent_feature_ID].child_list:
+                                annotation_set.__dict__[parent_feature_type][parent_feature_ID].child_list.append(child_to_assign)
+                        else:
+                            annotation_set.__dict__[parent_feature_type][parent_feature_ID] = ParentAnnotation(parent_feature_ID, seqid,
+                                                                                            parent_feature_type, child_list = [child_to_assign],
+                                                                                            parent = parents_parent, strand = strand,
+                                                                                            annotation_set = annotation_set)
+                        child_to_assign = parent_feature_ID
+                #In case of no parent from parent hierarchy in defline_dict
+                try:
+                    if not ID in annotation_set[parent].child_list:
+                        annotation_set[parent].child_list.append(ID)
+                except KeyError:
+                    print """It seems that this line has a parent attribute but that that parent doesn't have a line itself nor
+                    does this line have a defline attribute that specifies a parent type. I'm afraid this function can't currently
+                    deal with that."""
+                    print ID
+                    print parent
+                    return None
+            #fills other_attributes from defline
+            for defline_attribute in defline_dict:
+                if not defline_attribute in [IDfield,parent_field]:
+                    other_attributes[defline_attribute] = defline_dict[defline_attribute]
+            #And now to create the feature!
+            if not feature_type in annotation_set.__dict__:
+                annotation_set.__dict__[feature_type] = {}
+            if feature_type in base_features:
+                annotation_set.__dict__[feature_type][ID] = BaseAnnotation( ID, seqid, coords, feature_type, parent,
+                                                                           strand , other_attributes, annotation_set)
             else:
-                parent = None
-            if this_hierarchy != None:
-                if len(this_hierarchy) > 1:
-                    for hierarchy_parent in this_hierarchy[1:]:
-                        parentID = attribute_dic[hierarchy_parent]
-                        child_ID = attribute_dic[this_hierarchy[this_hierarchy.index(hierarchy_parent) - 1]]
-                        try:
-                            parent_of_parent_ID = attribute_dic[this_hierarchy[this_hierarchy.index(hierarchy_parent) + 1]]
-                        except:
-                            parent_of_parent_ID = None
-                        try:
-                            if child_ID in annotation_set[parentID].child_list:
-                                pass
-                            else:
-                                annotation_set[parentID].child_list.append(child_ID)
-                        except:
-                        #this should happen if parent doesn't exist
-                            eval('annotation_set.' + hierarchy_parent)[parentID] = ParentAnnotation(parendID, seqid, feature_type, child_list = [child_ID], parent = parent_of_parent_ID, annotation_set = annotation_set)
-                        if child_ID == ID:
-                            annotation_set[parentID].child_list.remove(child_ID)
-            eval('annotation_set.'+feature_type)[ID] = BaseAnnotation(ID, seqid, coords, feature_type, parent,
-                                                                      other_attributes = copy.copy(attribute_dic),
-                                                                      annotation_set = annotation_set)
+                child_list = []
+                annotation_set.__dict__[feature_type][ID] = ParentAnnotation(ID, seqid, feature_type, child_list,
+                                                                             parent, strand, annotation_set, other_attributes)
     if annotation_set_to_modify == None:
-        return annotation_set
-    print linesprocessed
-    
+        return copy.deepcopy(annotation_set)
 
 
 def read_cegma_gff(cegma_gff,annotation_set_to_modify = None):
     """reads gff produced by CEGMA and returns AnnotationSet populated by CEGMA predictions"""
-    modified_gff = read_to_string(cegma_gff).replace('\tFirst\t','\tCDS\t').replace('\tInternal\t','\tCDS\t').replace('\tTerminal\t','\tCDS\t').replace('KOG','Parent=KOG')
-    annotation_set = read_gff3(modified_gff,annotation_set_to_modify = annotation_set_to_modify, gene_hierarchy=['CDS'])
+    annotation_set = read_gff(cegma_gff,annotation_set_to_modify = annotation_set_to_modify, presets = "CEGMA")
     if annotation_set_to_modify == None:
         return annotation_set
 
@@ -522,7 +490,7 @@ def read_blast_csv(blast_csv,annotation_set_to_modify = None,hierarchy = ['match
     """Reads csv output from blast (-outfmt 10) into an AnnotationSet object. Currently does not string hits together because I'm
     biased towards working on genes in tandem arrays where stringing hits together is annoying. May add option in future."""
     #reads blast_csv from file location, file, or string
-    blast_lines = read_to_string(blast_csv).split('\n')
+    blast_file = ensure_file(blast_csv)
     #checks if annotation_set is given and creates annotation_set if not
     if annotation_set_to_modify == None:
         annotation_set = AnnotationSet()
@@ -540,7 +508,8 @@ def read_blast_csv(blast_csv,annotation_set_to_modify = None,hierarchy = ['match
             find_truncated_locname = False
         else:
             genome_seqids = annotation_set.genome.get_seqids()
-    for line in blast_lines:
+    for whole_line in blast_file:
+        line = whole_line.replace('\r','').replace('\n','')
         fields = line.split(',')
         if len(fields) > 8:
             seqid = fields[1]
@@ -571,10 +540,25 @@ def read_blast_csv(blast_csv,annotation_set_to_modify = None,hierarchy = ['match
                 id_generator_dict[IDbase] = 1
             other_attributes = {}
             other_attributes['evalue'] = fields[10]
-            other_attributes['strand'] = strand
-            parent = ID + '-match'
-            eval('annotation_set.' + feature_type)[ID] = BaseAnnotation(ID, seqid, coords, feature_type, parent, other_attributes,
-                                                                        annotation_set, create_parents_chain)
+            other_attributes['score'] = score
+            parent = ID + '-' + create_parents_chain[0]
+            child_to_set = ID
+            for parent_index in range(len(create_parents_chain)):
+                parent_feature = create_parents_chain[parent_index]
+                if not parent_feature in annotation_set.__dict__:
+                    setattr(annotation_set, parent_feature, {})
+                if parent_index != len(create_parents_chain) - 1:
+                    parent_to_set = ID + '-' + create_parents_chain[parent_index + 1]
+                else:
+                    parent_to_set = None
+                annotation_set.__dict__[parent_feature][ID + '-' + parent_feature] = ParentAnnotation(ID + '-' + parent_feature, seqid, parent_feature,
+                                                                                                    [child_to_set], parent_to_set, strand,
+                                                                                                    annotation_set, other_attributes = {})
+                child_to_set = ID + '-' + parent_feature
+            eval('annotation_set.' + feature_type)[ID] = BaseAnnotation(ID, seqid, coords, feature_type, parent, strand,
+                                                                        other_attributes, annotation_set)
+
+            
     if annotation_set_to_modify == None:
         return annotation_set
 
@@ -762,9 +746,9 @@ class AnnotationSet():
                     pass
         return all_dicts[item]
     
-    def read_gff3(self, gff3, *args, **kwargs):
+    def read_gff(self, gff, *args, **kwargs):
         kwargs["annotation_set_to_modify"] = self
-        read_gff3(gff3, *args, **kwargs)
+        read_gff(gff, *args, **kwargs)
     
     def get_seqid(self, seqid):
         seqid_annotation_set = AnnotationSet()        
@@ -794,18 +778,17 @@ class AnnotationSet():
     def read_cegma_gff(self, cegma_gff):
         read_cegma_gff(cegma_gff, annotation_set_to_modify = self)
     
-    def get_fasta(self,feature,seq_type = "nucleotide",longest=False):
+    def get_fasta(self,feature,seq_type = "nucleotide",longest=False,genomic = False):
         fasta_list = []
         for annotation in eval('self.' + feature):
-                fasta_list.append(eval('self.' + feature)[annotation].get_fasta(seq_type = seq_type,longest = longest))
+                fasta_list.append(eval('self.' + feature)[annotation].get_fasta(seq_type = seq_type,longest = longest, genomic = genomic))
         return "\n".join(fasta_list)
         
     
 
 class BaseAnnotation():
-    """Bottom-most level annotation on a genome, for example CDS, UTR, Match, etc. Anything that should have no children"""
-    def __init__(self, ID, seqid, coords, feature_type, parent = None, other_attributes = {}, annotation_set = None,
-                 create_parents_chain=['transcript','gene']):
+    """Bottom-most level annotation on a genome, for example CDS, UTR, Match_part, etc. Anything that should have no children"""
+    def __init__(self, ID, seqid, coords, feature_type, parent = None, strand = ".", other_attributes = {}, annotation_set = None):
         #Sets up most attributes
         self.ID = ID
         self.seqid = seqid
@@ -814,111 +797,66 @@ class BaseAnnotation():
         self.annotation_set = annotation_set
         for attribute in other_attributes:
             setattr(self, attribute, other_attributes[attribute])
-        #checks if feature type needs to be added to annotation_set
-        if annotation_set != None:
-            if not feature_type in annotation_set.__dict__:
-                setattr(annotation_set,feature_type, {})
-            #checks if parent feature types need to be added to annotation_set
-            if create_parents_chain != None:
-                for parent_feature_type in create_parents_chain:
-                    if not parent_feature_type in annotation_set.__dict__:
-                        setattr(annotation_set,parent_feature_type,{})
-            #gets parent object type if parent present but create_parents_chain = None
-            if parent != None and create_parents_chain == None:
-                try:
-                    create_parents_chain = [annotation_set[parent].feature_type]
-                except:
-                    create_parents_chain = ["unkown_parent"]
-            #checks if parent features present:    
-            if parent == None:
-                pass
-            #checks if parent needs to be created
-            elif parent in annotation_set.__dict__[create_parents_chain[0]]:
-                self.parent = parent
-                annotation_set.__dict__[create_parents_chain[0]][parent].child_list.append(ID)
-            #Executes parent creation process if parent needs to be created
-            else:
-                #checks for strand in base annotation attributes since this needs to be passed up to parents
-                if 'strand' in self.__dict__:
-                    other_attributes = {'strand':self.strand}
-                else:
-                    other_attributes = {}
-                #sets up hierarchy for parent creation
-                hierarchy = {feature_type: create_parents_chain[0]}
-                for feature_index in range(len(create_parents_chain))[:-1]:
-                    hierarchy[create_parents_chain[feature_index]] = create_parents_chain[feature_index + 1]
-                active_feature_type = feature_type
-                active_feature_ID = ID
-                if len(create_parents_chain) > 1:
-                    self.parent = parent + '-' + create_parents_chain[0]
-                else:
-                    self.parent = parent
-                parent_to_create = parent + '-' + hierarchy[active_feature_type]
-                #checks if parent needs to be created and creates parent
-                if len(create_parents_chain) > 1:
-                    while not parent in annotation_set.__dict__[hierarchy[active_feature_type]] and not parent_to_create in annotation_set.__dict__[hierarchy[active_feature_type]]:
-                        parent_to_create = parent + '-' + hierarchy[active_feature_type]
-                        #checks whether this is second-to-last round of parent creation
-                        if active_feature_type == create_parents_chain[-2]:
-                            parent_to_create = parent
-                            break
-                        elif parent in annotation_set.__dict__[hierarchy[hierarchy[active_feature_type]]] or hierarchy[active_feature_type] == create_parents_chain[-2]:
-                            next_level_parent = parent
-                        else:
-                            next_level_parent = parent + '-' + hierarchy[hierarchy[active_feature_type]]
-                        #creates parent
-                        annotation_set.__dict__[hierarchy[active_feature_type]][parent_to_create] = ParentAnnotation(ID = parent_to_create,
-                                                                                                                     seqid = seqid,
-                                                                                                                     feature_type = hierarchy[active_feature_type],
-                                                                                                                     child_list = [active_feature_ID],
-                                                                                                                     parent = next_level_parent,
-                                                                                                                     annotation_set = annotation_set, other_attributes = other_attributes)
-                        #resets active feature type and ID
-                        active_feature_type = hierarchy[active_feature_type]
-                        active_feature_ID = parent_to_create
-                #checks if parent was found or last-level parent needs to be created
-                try:
-                    annotation_set.__dict__[hierarchy[active_feature_type]][parent]
-                except KeyError:
-                    try:
-                        annotation_set.__dict__[hierarchy[active_feature_type]][parent_to_create].child_list.append(ID)
-                    except KeyError:
-                        annotation_set.__dict__[hierarchy[active_feature_type]][parent] = ParentAnnotation(ID = parent, seqid = seqid,
-                                                                                                       feature_type = hierarchy[active_feature_type],
-                                                                                                       child_list = [active_feature_ID],parent = None,
-                                                                                                       annotation_set = annotation_set, other_attributes = other_attributes)
+        self.parent = parent
+        self.strand = strand
+
     def get_coords(self):
         return self.coords
     
     def get_seq(self):
         try:
-            if self.strand == '+':
+            if self.strand == '+' or self.strand == '.':
                 return Sequence(self.annotation_set.genome.genome_sequence[self.seqid][self.coords[0]-1:self.coords[1]])
             elif self.strand == '-':
                 return Sequence(self.annotation_set.genome.genome_sequence[self.seqid][self.coords[0]-1:self.coords[1]]).reverse_compliment()
+            else:
+                print self.ID + ' has invalid strand value "' + self.strand + '"'
         except:
             print "either base_annotation has not annotation_set, or annotation_set has no genome, or genome has no\
             genome sequence, or genome sequence has no matching seqid, or coords are out of range on that seqid"
             print self.seqid
+    
+    def get_gff(self, gff_format = "simple gff3"):
+        if self.annotation_set != None:
+            fields = ['seqid','source','feature_type','get_coords()[0]','get_coords()[1]','score','strand','phase']
+            fields_list = []
+            for field in fields:
+                try:
+                    fields_list.append(str(eval('self.' + field)))
+                except AttributeError:
+                    fields_list.append('.')
+            if gff_format == "simple gff3" or "extended gff3":
+                defline = 'ID=' + self.ID
+                if self.parent != None:
+                    defline = defline + ';Parent=' + self.parent                
+            if gff_format == "extended gff3":
+                for attribute in self.__dict__:
+                    if type(self.__dict__[attribute]).__name__ == 'str' and not attribute in ['ID','Parent','score','strand','seqid','feature_type','phase']:
+                        defline = defline + ';' + attribute + '=' + self.__dict__[attribute]
+            elif gff_format[:13] == "augustus hint":
+                gff_format_fields = gff_format.split()
+                fields_list[2] = gff_format_fields[2]
+                defline = "src=" + gff_format_fields[3]
+                if len(gff_format_fields) > 4:
+                    defline = defline + ";pri=" + gff_format_fields[4]
+            fields_list.append(defline)
+            return '\t'.join(fields_list)
+    
 
 
 class ParentAnnotation():
     """Parent of any BaseAnnotation. Examples include genes and transcripts. Suggested hierarchy for genes is
     CDS (as BaseAnnotation) -> transcript -> gene."""
-    def __init__(self, ID, seqid, feature_type, child_list = [], parent = None, annotation_set = None, other_attributes = {}):
+    def __init__(self, ID, seqid, feature_type, child_list = [], parent = None, strand = ".", annotation_set = None, other_attributes = {}):
         self.ID = ID
         self.seqid = seqid
         self.feature_type = feature_type
         self.child_list = copy.copy(child_list)
         self.parent = parent
         self.annotation_set = annotation_set
+        self.strand = strand
         for attribute in other_attributes:
             setattr(self, attribute, other_attributes[attribute])
-        if annotation_set != None:
-            try:
-                annotation_set[parent].child_list.append(ID)
-            except:
-                pass
     
     def get_coords(self):
         if len(self.child_list) > 0 and self.annotation_set != None:
@@ -934,11 +872,12 @@ class ParentAnnotation():
                     ParentAnnotation objects nor BaseAnnotation object. Get your act together"
             return (min(coords_list),max(coords_list))
     
-    def get_fasta(self, seq_type = "nucleotide", longest=False, genomic = False):
+    def get_fasta(self, seq_type = "nucleotide", longest=False, genomic = False, name_from = 'ID'):
         """Returns fasta of this annotation's sequence. If this feature has multiple subfeatures (e.g. this is a gene
         and it has multiple transcripts), the sequence of each subfeature will be an entry in the fasta string."""
         if genomic == True:
-            pass
+            if self.annotation_set.genome != None:
+                return ">" + self.ID + '\n' + self.annotation_set.genome.genome_sequence[self.seqid][self.get_coords()[0] - 1:self.get_coords()[1]] + '\n'
         elif len(self.child_list) > 0 and self.annotation_set != None:
             if self.annotation_set.genome != None:
                 fasta_list = []
@@ -966,11 +905,13 @@ class ParentAnnotation():
                         new_seq = Sequence("".join(seq_list)).translate()
                     else:
                         print seq_type + ' is not valid seq_type. Please specify "protein" or "nucleotide".'
-                    fasta_list.append('>' + self.ID + '\n' + new_seq)
+                    fasta_list.append('>' + self.__dict__[name_from] + '\n' + new_seq)
                 else:
                     for child in self.child_list:
                         try:
-                            fasta_list.append(self.annotation_set[child].get_fasta(seq_type=seq_type))
+                            child_fasta = self.annotation_set[child].get_fasta(seq_type=seq_type, name_from = name_from)
+                            if child_fasta != "":
+                                fasta_list.append(child_fasta)
                         except AttributeError:
                             print "ParentAnnotation has both ParentAnnotation and BaseAnnotation children!"
                             print self.ID
@@ -987,6 +928,49 @@ class ParentAnnotation():
             else: return ""
         else: return ""
     
+    def get_gff(self, gff_format = "simple gff3"):
+        """presets will eventually include "simple gff3", "simple gff2", "apollo gff3", and more by request"""
+        if self.annotation_set != None:
+            fields = ['seqid','source','feature_type','get_coords()[0]','get_coords()[1]','score','strand','phase']
+            fields_list = []
+            parent_line = True
+            for field in fields:
+                try:
+                    fields_list.append(str(eval('self.' + field)))
+                except AttributeError:
+                    fields_list.append('.')
+            if gff_format == "simple gff3" or "extended gff3":
+                defline = 'ID=' + self.ID
+                if self.parent != None:
+                    defline = defline + ';Parent=' + self.parent
+            if gff_format == "extended gff3":
+                for attribute in self.__dict__:
+                    if type(self.__dict__[attribute]).__name__ == 'str' and not attribute in ['ID','Parent','score','strand','seqid','feature_type','phase']:
+                        defline = defline + ';' + attribute + '=' + self.__dict__[attribute]
+            elif gff_format[:13] == "augustus hint":
+                parent_line = False
+            fields_list.append(defline)
+            if parent_line:
+                lines_list = ['\t'.join(fields_list)]
+            else:
+                lines_list = []
+            child_dict = {}
+            for child in self.child_list:
+                child_object = self.annotation_set[child]
+                if child_object.get_coords() not in child_dict:
+                    child_dict[child_object.get_coords()] = child_object.get_gff(gff_format)
+                else:
+                    child_dict[(child_object.get_coords()[0],child_object.get_coords()[1] + len(child_dict))] = child_object.get_gff(gff_format)
+            child_coords = list(child_dict)
+            child_coords.sort()
+            for child_index in child_coords:
+                lines_list.append(child_dict[child_index])
+            return '\n'.join(lines_list)
+            
+        
+        
+        
+        
 
 class Sequence(str):
     """DNA sequence. Has methods allowing reverse complimenting,
@@ -1084,7 +1068,7 @@ class GenomeSequence(dict):
                 else:
                     seq = seq + line.replace('\r','').replace('\n','')
             if seq != "":
-                self[seqname] = seqself[seqname] = seq
+                self[seqname] = seq
 
     
 
@@ -1102,7 +1086,7 @@ class Genome():
                 self.annotations = annotations
                 self.annotations.genome = self
             elif annotation_format == 'gff3':
-                self.annotations = read_gff3(annotations)
+                self.annotations = read_gff(annotations)
                 self.annotations.genome = self
             elif annotation_format == 'cegma_gff':
                 self.annotations = read_cegma_gff(annotations)
@@ -1179,11 +1163,11 @@ class Genome():
             self.annotations = read_cegma_gff(cegma_gff)
             self.annotations.genome = self
 
-    def read_gff3(self, gff3, *args, **kwargs):
+    def read_gff(self, gff, *args, **kwargs):
         if self.annotations != None:
-            self.annotations.read_gff3(gff3, *args, **kwargs)
+            self.annotations.read_gff(gff, *args, **kwargs)
         else:
-            self.annotations = read_gff3(gff3, *args, **kwargs)
+            self.annotations = read_gff(gff, *args, **kwargs)
             self.annotations.genome = self
     
     def read_vcf(self, vcf):
@@ -1218,21 +1202,95 @@ class position_dic(dict):
                 if genome_sequence[seqid][position] in "ATat":
                     self[seqid][position] = 1
 
-    def sliding_window_calculate(self, window_size, window_jump = 1, operation = "sum"):
-        new_dic = {}
+    def sliding_window_calculate(self, window_size, window_jump = 1, operation = "sum", output = "dict",
+                                 threshold = 1, seqs_to_exclude = []):
+        if output == "dict":
+            new_dic = {}
+        elif output == "annotation_set":
+            annotation_set = AnnotationSet()
+            annotation_set.region = {}
+        elif output == "coords":
+            coords_list = []
         for seqid in self:
-            if len(self[seqid]) > window_size:
-                new_dic[seqid] = []
+            if len(self[seqid]) > window_size and not seqid in seqs_to_exclude:
+                if output == "dict":
+                    new_dic[seqid] = []
+                window_in = False
+                coords_list = []
                 for position in range(len(self[seqid][:-1 * window_size]) / window_jump):
                     window_start = position * window_jump
+                    if operation == "set":
+                        new_dic[seqid].append(set(self[seqid][window_start:window_start + window_size]))
+                        continue
                     window_sum = numpy.sum(self[seqid][window_start:window_start + window_size])
                     if operation == "sum":
-                        new_dic[seqid].append(window_sum)
+                        value = window_sum
                     elif operation == "average":
-                        new_dic[seqid].append(window_sum * 1.0 / window_size)
+                        value = window_sum * 1.0 / window_size
+                    if output == "dict":
+                        new_dic[seqid].append(value)
+                    elif output == 'annotation_set':
+                        if value >= threshold:
+                            if window_in == False:
+                                window_in = True
+                                if len(coords_list) == 0:
+                                    coords_list.append([1 + window_start])
+                                elif position > coords_list[-1]:
+                                    coords_list.append([1 + window_start])
+                        else:
+                            if window_in == True:
+                                window_in = False
+                                if len(coords_list[-1]) == 1:
+                                    coords_list[-1].append(window_start + window_size)
+                                else:
+                                    coords_list[-1][1] = window_start + window_size
+                    elif output == "coords":
+                        if threshold[0] <= value <= thredshold[1]:
+                            coords_list.append([seqid, 1 + window_start, window_start + window_size])
+                    elif type(output) == file:
+                        output.write(seqid + '\t' + str(value) + '\n')
                     if window_start % 10000000 == 0 and verbose:
                         print "processed " + seqid + " to position " + str(position)
+                if output == "annotation_set":
+                    if len(coords_list) > 0:
+                        if len(coords_list[-1]) == 1:
+                            coords_list[-1].append(len(self[seqid]))
+                        for coords in coords_list:
+                            ID = seqid + "-window" + str(coords[0])
+                            annotation_set.region[ID] = BaseAnnotation(ID, seqid, tuple(coords), "region")
                 if verbose:
                     print "processed " + seqid
-        return(copy.deepcopy(new_dic))
+                    if output == 'annotation_set':
+                        for region in annotation_set.region:
+                            if annotation_set.region[region].seqid == seqid:
+                                print str(annotation_set.region[region].coords)                    
+        if output == "dict":
+            return new_dic
+        elif output == "annotation_set":
+            return copy.deepcopy(annotation_set)
+        elif output == "coords":
+            return coords_list
+
+
+def annotation_overlap(annotation_set_features1, annotation_set_features2):
+    annotation_coords_dict = {}
+    contained_list = []
+    for annotation in annotation_set_features1:
+        annotation_obj = annotation_set_features1[annotation]
+        seqid = annotation_obj.seqid
+        if seqid in annotation_coords_dict:
+            annotation_coords_dict[seqid].append(annotation_obj.get_coords())
+        else:
+            annotation_coords_dict[seqid] = [annotation_obj.get_coords()]
+    for annotation in annotation_set_features2:
+        annotation_obj = annotation_set_features2[annotation]
+        seqid = annotation_obj.seqid
+        coords2 = annotation_obj.get_coords()
+        if seqid in annotation_coords_dict:
+            for coords1 in annotation_coords_dict[seqid]:
+                if coords1[0] <= coords2[0] <= coords1[1] or coords1[0] <= coords2[1] <= coords1[1]:
+                    contained_list.append(annotation_obj.ID)
+    return contained_list
+
+
 
