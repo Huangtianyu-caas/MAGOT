@@ -420,7 +420,7 @@ def read_gff(gff,annotation_set_to_modify = None, base_features = ['CDS','match_
                 annotation_set[ID]
                 if ID in generate_new_ID_dict:
                     generate_new_ID_dict[ID] = generate_new_ID_dict[ID] + 1
-                    ID = ID + str(generate_new_ID_dict[ID])
+                    ID = ID + "-" + str(generate_new_ID_dict[ID])
                 else:
                     generate_new_ID_dict[ID] = 2
                     ID = ID + '2'
@@ -839,6 +839,10 @@ class BaseAnnotation():
                 defline = "src=" + gff_format_fields[3]
                 if len(gff_format_fields) > 4:
                     defline = defline + ";pri=" + gff_format_fields[4]
+            # elif gff_format == "simple gtf":
+            #     if self.parent != None:
+            #         has_parent = True
+            #         defline = 
             fields_list.append(defline)
             return '\t'.join(fields_list)
     
