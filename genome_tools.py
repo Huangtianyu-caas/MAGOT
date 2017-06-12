@@ -612,8 +612,9 @@ def depth_from_gff(depth_file, gff, features = "['CDS','intron','upstream','down
             print transcript + '\t' + str(transcript_CDS_dict[transcript])
     if 'upstream' in features_list:
         print "#upstream " + stream_length + "bp counts"
-        for transcriptID in my_annotations.transcript:
-            transcript = my_annotations.transcript[transcriptID]
+        transcript_dict = my_annotations.__dict__[my_annotations[my_annotations.CDS[list(my_annotations.CDS)[0]].parent].feature_type]
+        for transcriptID in transcript_dict:
+            transcript = transcript_dict[transcriptID]
             if transcript.strand == "+":
                 stop = transcript.get_coords()[0] - 1
                 start = stop - int(stream_length)
