@@ -839,10 +839,11 @@ class BaseAnnotation():
                 defline = "src=" + gff_format_fields[3]
                 if len(gff_format_fields) > 4:
                     defline = defline + ";pri=" + gff_format_fields[4]
-            # elif gff_format == "simple gtf":
-            #     if self.parent != None:
-            #         has_parent = True
-            #         defline = 
+            # elif gff_format[:3] == "gtf":
+            #     defline = ""
+            #     for parent_type in gff_format.split()[1:]:
+            #         defline = defline + parent_type + ''
+            #     
             fields_list.append(defline)
             return '\t'.join(fields_list)
     
@@ -1199,6 +1200,29 @@ class position_dic(dict):
                     self[seqid][position] = eval(fill_with)
             elif fill_type == "start":
                 self[seqid][coords[0] - 1] = eval(fill_with)
+    
+    def count_from_annotations(self, annotation_set, feature):
+        count_list = []
+        for annotation in eval("annotation_set." + feature):
+            annotation_obj = eval("annotation_set." + feature)[annotation]
+            seqid = annotation_obj.seqid
+            coords = annotation_obj.get_coords()
+            featureID = annotation_obs.ID
+            try:
+                parent = annotation_obj.parent
+            except:
+                pass
+            ID = annotation_obj.ID
+            count0 = 0
+            count1 = 0
+            for position in range(coords[0] - 1,coords[1]):
+                if self[seqid][position] == 0:
+                    count0 = count0 + 1
+                elif self[seqid][position] == 1:
+                    count1 = count1 + 1
+            count_list.append([featureID,count0,count1])
+        return count_list
+    
 
     def at_content(self, genome_sequence):
         for seqid in self:
@@ -1208,6 +1232,7 @@ class position_dic(dict):
 
     def sliding_window_calculate(self, window_size, window_jump = 1, operation = "sum", output = "dict",
                                  threshold = 1, seqs_to_exclude = []):
+        """operation may be "sum", "average", or "set". Output may be "dict","coords", or "annotation_set"."""
         if output == "dict":
             new_dic = {}
         elif output == "annotation_set":
@@ -1239,7 +1264,7 @@ class position_dic(dict):
                                 window_in = True
                                 if len(coords_list) == 0:
                                     coords_list.append([1 + window_start])
-                                elif position > coords_list[-1]:
+                                elif position > coords_list[-1][1]:
                                     coords_list.append([1 + window_start])
                         else:
                             if window_in == True:
@@ -1261,7 +1286,7 @@ class position_dic(dict):
                             coords_list[-1].append(len(self[seqid]))
                         for coords in coords_list:
                             ID = seqid + "-window" + str(coords[0])
-                            annotation_set.region[ID] = BaseAnnotation(ID, seqid, tuple(coords), "region")
+                            annotation_set.region[ID] = BaseAnnotation(ID, seqid, tuple(coords), "region", annotation_set = annotation_set)
                 if verbose:
                     print "processed " + seqid
                     if output == 'annotation_set':
