@@ -1,5 +1,9 @@
 Priority1:
 Converting annotation formats
+    currently can read: Apollo-compatable GFF3 NCBI GFF3, augustus GTF, RepeatMasker GTF, exonerate default output, blast CSV
+    currently can write: Apollo-compatable GFF3, augustus hint
+    would like to read: BED, Genbank
+    would like to write: GTF, BED, Genbank
 Getting sequences from annotations (CDS, translated peptide, genomic locus, genomic locus with buffer, upstream, downstream)
 add/merge annotations
 Performing set opperations on annotations
@@ -7,4 +11,4 @@ Output to specialized files (e.g. Apollo-style integrated gff+fasta)
 
 Priority2:
 Calculating statistics about annotations (e.g. sequence content, % overlap with other annotations)
-Other annotation manipulations (e.g. change feature type en-mass, give intermediate parent (exon between CDS/UTR and transcript))
+Other annotation manipulations (e.g. change feature type en-mass, give intermediate parent (exon between CDS/UTR and transcript)- both necessary for say converting GTF to NCBI GFF3)
