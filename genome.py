@@ -1207,7 +1207,7 @@ class position_dic(dict):
             annotation_obj = eval("annotation_set." + feature)[annotation]
             seqid = annotation_obj.seqid
             coords = annotation_obj.get_coords()
-            featureID = annotation_obs.ID
+            featureID = annotation_obj.ID
             try:
                 parent = annotation_obj.parent
             except:

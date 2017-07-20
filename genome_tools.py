@@ -429,7 +429,7 @@ def replace_names(text_file,replace_table, name_end = " "):
         for word in replace_dict:
             if word in newline:
                 newline = newline.replace(word,replace_dict[word])
-        print newline
+        print newline[:-1]
         
     
 def repeatmasker2augustushints(repeatmasker_gff):
