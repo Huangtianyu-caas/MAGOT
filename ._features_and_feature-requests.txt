@@ -3,6 +3,7 @@ Converting annotation formats
 Getting sequences from annotations (CDS, translated peptide, genomic locus, genomic locus with buffer, upstream, downstream)
 add/merge annotations
 Performing set opperations on annotations
+Output to specialized files (e.g. Apollo-style integrated gff+fasta)
 
 Priority2:
 Calculating statistics about annotations (e.g. sequence content, % overlap with other annotations)
