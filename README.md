@@ -1,5 +1,5 @@
 ![alt tag](https://github.com/biorover/GenomePy/blob/master/GenomePyLogo75p.png) 
-# GenomePy
+# MAGOT (Multitool for Analyzing Genomes or Transcriptomes)
 
 A functional and simple python library for genomics
 
