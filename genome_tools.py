@@ -51,6 +51,7 @@ def help_func():
 
 #debug
 def print_input(*arg):
+    """This is for debuging and testing. It just prints all arguments"""
     subprocess.call(
     """
     echo """ + '"' + " ".join(arg) + '"',
@@ -635,7 +636,13 @@ def depth_from_gff(depth_file, gff, features = "['CDS','intron','upstream','down
         
     
     
-    
+def coords2fasta(fasta_file,seqid,start,stop,truncate_names = "False"):
+    """prints fasta-format sequence between coordinates (1-based, as in gff-format) within
+    a specific entry in a fasta file. truncate_names="True" can be used if you only want to provide
+    the first word after the ">" as the seqid (assuming it's unique of course)"""
+    print ">" + seqid + ":" + start + "-" + stop
+    print genome.Genome(fasta_file, truncate_names=eval(truncate_names)).genome_sequence[seqid][int(start) - 1:int(stop)]
+
     
 
     
