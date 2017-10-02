@@ -2,6 +2,8 @@
 #MAGOT: a functional and simple library for genomic analysis
 #Sean McKenzie and Nelson Salinas
 
+#This module will deal with importing and exporting annotations in a variety of formats
+
 
 import copy
 import StringIO

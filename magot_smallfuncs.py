@@ -2,6 +2,8 @@
 #MAGOT: a functional and simple library for genomic analysis
 #Sean McKenzie and Nelson Salinas
 
+#All of the random small functions used in other magot programs
+
 
 import copy
 import StringIO

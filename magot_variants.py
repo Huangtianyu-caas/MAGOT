@@ -2,6 +2,11 @@
 #MAGOT: a functional and simple library for genomic analysis
 #Sean McKenzie and Nelson Salinas
 
+#This whole library is neglected and may not work with well with the current MAGOT version.
+
+#Theoretically, this library will deal with genomic variants (SNPs, indels, maybe eventually structural variants),
+#performing tasks like heterozygosity calculations or genetic distance calculations.
+
 
 import copy
 import StringIO
