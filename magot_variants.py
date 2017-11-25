@@ -12,6 +12,7 @@ import copy
 import StringIO
 from genome import *
 
+
 def calculate_heterozygosity(variant_set,locus_list = None, window = 10000):
     """calculates heterozygosity at each locus specified in the vcf_header associated with the variant set,
     or by a locus_list. Loci are specified in the locus list as either "seqid,seq_length" for entire
