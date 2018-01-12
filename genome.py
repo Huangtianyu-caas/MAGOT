@@ -252,7 +252,7 @@ def read_gff(gff,annotation_set_to_modify = None, base_features = ['CDS','match_
     presets_dict["augustus"] = "features_to_ignore = ['gene','transcript','stop_codon','terminal','internal','initial','intron',\
         'start_codon','single']\nparent_field = None\nparents_hierarchy = ['transcript_id','gene_id']\nIDfield = None"
     presets_dict["RepeatMasker"] = "parent_field = None\nIDfield = 'Target'"
-    presets_dict["CEGMA"] = "parent_field = ''\nIDfield = None\nparents_hierarchy = ['gene_id\nfeatures_to_replace = \
+    presets_dict["CEGMA"] = "parent_field = ''\nIDfield = None\nparents_hierarchy = ['gene_id']\nfeatures_to_replace = \
         [['First','CDS']['Internal','CDS']['Terminal','CDS']['Single','CDS']]\ngff_version = 3"
     if presets in presets_dict:
         exec(presets_dict[presets])
@@ -280,6 +280,14 @@ def read_gff(gff,annotation_set_to_modify = None, base_features = ['CDS','match_
                     version = 3
                 else:
                     version = 2
+                    if not IDfield == None:
+                        if not " " + IDfield + " " in " " + fields[8].replace(';',' ') and parents_hierarchy == []:
+                            IDfield = None
+                            parent_field = None
+                            if "gene_id" in fields[8] and "transcript_id" in fields[8]:
+                                parents_hierarchy = ['transcript_id','gene_id']
+                            elif "gene_id" in fields[8]:
+                                parents_hierarchy = ['gene_id']
             ID = None
             parent = None
             other_attributes = {}

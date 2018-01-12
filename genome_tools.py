@@ -325,7 +325,7 @@ def starjunc2gff(starjunc_file, output = 'stdout'):
         outopt = 'string'
     stargff = genome.starjunc2gff(starjunc_file,output = outopt)
     if outopt == 'string':
-        out.write(starff)
+        out.write(stargff)
         out.close()
 
 
@@ -644,6 +644,18 @@ def coords2fasta(fasta_file,seqid,start,stop,truncate_names = "False"):
     print genome.Genome(fasta_file, truncate_names=eval(truncate_names)).genome_sequence[seqid][int(start) - 1:int(stop)]
 
     
+def cds2pep(fasta_file):
+    working_string = ""
+    for original_line in open(fasta_file):
+        line = original_line.replace('\n','').replace('\r','')
+        if line[0] == '>':
+            if working_string != "":
+                print genome.Sequence(working_string).translate()
+                working_string = ""
+            print line
+        else:
+            working_string = working_string + line
+    print genome.Sequence(working_string).translate()
 
     
     
