@@ -521,8 +521,10 @@ def convert_gff(gff, input_format, output_format):
         presets = input_format
     if output_format == 'gff3':
         gff_format = "simple gff3"
+    elif output_format == 'gtf':
+        gff_format = 'gtf'
     else:
-        print "currently only writes 'gff3' format"
+        print "currently only writes 'gff3' and 'gtf' format"
         return None
     annotations = genome.read_gff(gff, presets = presets)
     print genome.write_gff(annotations, gff_format)

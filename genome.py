@@ -626,11 +626,8 @@ class BaseAnnotation():
                 defline = "src=" + gff_format_fields[3]
                 if len(gff_format_fields) > 4:
                     defline = defline + ";pri=" + gff_format_fields[4]
-            # elif gff_format[:3] == "gtf":
-            #     defline = ""
-            #     for parent_type in gff_format.split()[1:]:
-            #         defline = defline + parent_type + ''
-            #     
+            elif gff_format == "gtf":
+                defline = 'transcript_id ' + self.parent + ';gene_id ' + self.annotation_set[self.parent].parent
             fields_list.append(defline)
             return '\t'.join(fields_list)
     
@@ -740,6 +737,8 @@ class ParentAnnotation():
                     if type(self.__dict__[attribute]).__name__ == 'str' and not attribute in ['ID','Parent','score','strand','seqid','feature_type','phase']:
                         defline = defline + ';' + attribute + '=' + self.__dict__[attribute]
             elif gff_format[:13] == "augustus hint":
+                parent_line = False
+            elif gff_format == 'gtf':
                 parent_line = False
             fields_list.append(defline)
             if parent_line:
