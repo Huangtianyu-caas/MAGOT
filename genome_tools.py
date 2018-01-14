@@ -45,7 +45,7 @@ def help_func():
         if type(globals()[attribute]).__name__ == "function":
             func_list.append(attribute)
     func_list.remove('main')
-    print "\ngenome_tools script from GenomePy.\n\nUsage: python genome_tools.py function [option1=<option1 choice> ...] \n\nFunctions:\n\
+    print "\ngenome_tools script from MAGOT.\n\nUsage: ' + sys.argv[0] + ' function [option1=<option1 choice> ...] \n\nFunctions:\n\
     " + '\n    '.join(func_list)
 
 
@@ -325,7 +325,7 @@ def starjunc2gff(starjunc_file, output = 'stdout'):
         outopt = 'string'
     stargff = genome.starjunc2gff(starjunc_file,output = outopt)
     if outopt == 'string':
-        out.write(starff)
+        out.write(stargff)
         out.close()
 
 
@@ -514,15 +514,19 @@ def at_content_from_fasta(fasta):
 def convert_gff(gff, input_format, output_format):
     """converts gff from any of the many formats handled by this program to any format this program can output to.
     Currently accepts as input: gff3 (with parent and ID attributes), augustus, RepeatMasker, CEGMA
-    Currently accepts as output: gff3"""
+    Currently accepts as output: gff3, gtf, exon_added_gff3"""
     if input_format == 'gff3':
         presets = None
     else:
         presets = input_format
     if output_format == 'gff3':
         gff_format = "simple gff3"
+    elif output_format == 'gtf':
+        gff_format = 'gtf'
+    elif output_format == "exon_added_gff3":
+        gff_format = "exon added gff3"
     else:
-        print "currently only writes 'gff3' format"
+        print "currently only writes 'gff3' and 'gtf' format"
         return None
     annotations = genome.read_gff(gff, presets = presets)
     print genome.write_gff(annotations, gff_format)
@@ -644,6 +648,18 @@ def coords2fasta(fasta_file,seqid,start,stop,truncate_names = "False"):
     print genome.Genome(fasta_file, truncate_names=eval(truncate_names)).genome_sequence[seqid][int(start) - 1:int(stop)]
 
     
+def cds2pep(fasta_file):
+    working_string = ""
+    for original_line in open(fasta_file):
+        line = original_line.replace('\n','').replace('\r','')
+        if line[0] == '>':
+            if working_string != "":
+                print genome.Sequence(working_string).translate()
+                working_string = ""
+            print line
+        else:
+            working_string = working_string + line
+    print genome.Sequence(working_string).translate()
 
     
     
