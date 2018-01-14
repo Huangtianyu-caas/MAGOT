@@ -1,6 +1,16 @@
 #!/usr/bin/python
 #MAGOT: a functional and simple library for genomic analysis
 #Sean McKenzie and Nelson Salinas
+#See license on github ()
+#Comments, feature requests, and friendly encouragement can be offered via github ()
+
+#Known issues:
+#Currently UTRs are not handled well. Most ways to import gff3 with UTRs encoded by exon feature regions which don't
+#overlap with CDS feature regions will result in the UTRs being lost (because exon features are usually summarily ignored).
+#Additionally, even if you manage to import UTRs, most output will likely ignore them. Bug us about it on a github ticket
+#and we may well fix it.
+#
+#Importing GFFs still quite slow, likely having to do with ID assignment. Will try to fix soon.
 
 
 import copy
@@ -612,13 +622,13 @@ class BaseAnnotation():
                     fields_list.append(str(eval('self.' + field)))
                 except AttributeError:
                     fields_list.append('.')
-            if gff_format == "simple gff3" or "extended gff3":
+            if gff_format in ["simple gff3","extended gff3","exon added gff3"]:
                 defline = 'ID=' + self.ID
                 if self.parent != None:
                     defline = defline + ';Parent=' + self.parent                
             if gff_format == "extended gff3":
                 for attribute in self.__dict__:
-                    if type(self.__dict__[attribute]).__name__ == 'str' and not attribute in ['ID','Parent','score','strand','seqid','feature_type','phase']:
+                    if type(self.__dict__[attribute]).__name__ == 'str' and not attribute in ['ID','Parent','score','strand','seqid','feature_type','phase','source']:
                         defline = defline + ';' + attribute + '=' + self.__dict__[attribute]
             elif gff_format[:13] == "augustus hint":
                 gff_format_fields = gff_format.split()
@@ -629,7 +639,10 @@ class BaseAnnotation():
             elif gff_format == "gtf":
                 defline = 'transcript_id ' + self.parent + ';gene_id ' + self.annotation_set[self.parent].parent
             fields_list.append(defline)
-            return '\t'.join(fields_list)
+            if gff_format == "exon added gff3" and fields_list[2] == "CDS":
+                return '\t'.join(fields_list).replace('\tCDS\t','\texon\t').replace('ID=','ID=ExonOf') + "\n" + '\t'.join(fields_list)
+            else:
+                return '\t'.join(fields_list)
     
 
 
@@ -718,7 +731,7 @@ class ParentAnnotation():
         else: return ""
     
     def get_gff(self, gff_format = "simple gff3"):
-        """presets will eventually include "simple gff3", "simple gff2", "apollo gff3", and more by request"""
+        """presets currently include: "simple gff3", "extended gff3", "gtf", "exon added gff3", and "augustus hint". Will eventually include more by request"""
         if self.annotation_set != None:
             fields = ['seqid','source','feature_type','get_coords()[0]','get_coords()[1]','score','strand','phase']
             fields_list = []
@@ -728,20 +741,20 @@ class ParentAnnotation():
                     fields_list.append(str(eval('self.' + field)))
                 except AttributeError:
                     fields_list.append('.')
-            if gff_format == "simple gff3" or "extended gff3":
+            if gff_format in ["simple gff3","extended gff3","exon added gff3"]:
                 defline = 'ID=' + self.ID
                 if self.parent != None:
                     defline = defline + ';Parent=' + self.parent
             if gff_format == "extended gff3":
                 for attribute in self.__dict__:
-                    if type(self.__dict__[attribute]).__name__ == 'str' and not attribute in ['ID','Parent','score','strand','seqid','feature_type','phase']:
+                    if type(self.__dict__[attribute]).__name__ == 'str' and not attribute in ['ID','Parent','score','strand','seqid','feature_type','phase','source']:
                         defline = defline + ';' + attribute + '=' + self.__dict__[attribute]
             elif gff_format[:13] == "augustus hint":
                 parent_line = False
             elif gff_format == 'gtf':
                 parent_line = False
-            fields_list.append(defline)
             if parent_line:
+                fields_list.append(defline)
                 lines_list = ['\t'.join(fields_list)]
             else:
                 lines_list = []
@@ -756,6 +769,12 @@ class ParentAnnotation():
             child_coords.sort()
             for child_index in child_coords:
                 lines_list.append(child_dict[child_index])
+            if gff_format == "exon added gff3":
+                lines_list = '\n'.join(lines_list).split('\n')
+                for line in lines_list[:]:
+                    if line.split('\t')[2] == "CDS":
+                        lines_list.remove(line)
+                        lines_list.append(line)
             return '\n'.join(lines_list)
 
 
