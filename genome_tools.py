@@ -1,4 +1,17 @@
 #!/usr/bin/python
+#MAGOT: a functional and simple library for genomic analysis
+#Sean McKenzie and Nelson Salinas
+#See license on github (https://github.com/biorover/MAGOT/blob/master/LICENSE)
+#Comments, feature requests, and friendly encouragement can be offered via github (https://github.com/biorover/MAGOT/issues)
+
+#Known issues:
+#Currently UTRs are not handled well. Most ways to import gff3 with UTRs encoded by exon feature regions which don't
+#overlap with CDS feature regions will result in the UTRs being lost (because exon features are usually summarily ignored).
+#Additionally, even if you manage to import UTRs, most output will likely ignore them. Bug us about it on a github ticket
+#and we may well fix it.
+#
+#Importing GFFs still quite slow, likely having to do with ID assignment. Will try to fix soon.
+
 try:
     import genome
     import genome_tools_config as config

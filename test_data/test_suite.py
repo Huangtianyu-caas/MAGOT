@@ -10,7 +10,7 @@ command_list = [
     ('tab2fasta Align.pep.tab > temp.test','925279487 14901 temp.test'),
     ('fasta2tab Align.pep.fa > temp.test','1028007007 14869 temp.test'),
     ('gff2fasta C14.fasta StandardGTF.gtf > temp.test','2836090577 690750 temp.test'),
-    ('gff2fasta c14.fasta StandardGTF.gtf seq_type=protein > temp.test','111942461 233762 temp.test'),
+    ('gff2fasta C14.fasta StandardGTF.gtf seq_type=protein > temp.test','111942461 233762 temp.test'),
     ('cds2pep CDSannotations.cds > temp.test','111942461 233762 temp.test'),
     ('convert_gff minimalGFF3.gff gff3 gtf > temp.test','1904390924 226225 temp.test'),
     ('convert_gff StandardGTF.gtf gtf gff3 > temp.test','2934568300 276674 temp.test')

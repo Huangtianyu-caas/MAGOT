@@ -1,8 +1,8 @@
 #!/usr/bin/python
 #MAGOT: a functional and simple library for genomic analysis
 #Sean McKenzie and Nelson Salinas
-#See license on github ()
-#Comments, feature requests, and friendly encouragement can be offered via github ()
+#See license on github (https://github.com/biorover/MAGOT/blob/master/LICENSE)
+#Comments, feature requests, and friendly encouragement can be offered via github (https://github.com/biorover/MAGOT/issues)
 
 #Known issues:
 #Currently UTRs are not handled well. Most ways to import gff3 with UTRs encoded by exon feature regions which don't
