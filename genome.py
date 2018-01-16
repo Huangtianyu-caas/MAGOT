@@ -260,10 +260,9 @@ def read_gff(gff,annotation_set_to_modify = None, base_features = ['CDS','match_
     replace_dict = {"\n":"","\r":""}
     presets_dict = {}
     presets_dict["augustus"] = "features_to_ignore = ['gene','transcript','stop_codon','terminal','internal','initial','intron',\
-        'start_codon','single']\nparent_field = None\nparents_hierarchy = ['transcript_id','gene_id']\nIDfield = None"
+        'start_codon','single']\nparent_field = None\nparents_hierarchy = ['transcript_id','gene_id']\nIDfield = None\ngff_version=2"
     presets_dict["RepeatMasker"] = "parent_field = None\nIDfield = 'Target'"
-    presets_dict["CEGMA"] = "parent_field = ''\nIDfield = None\nparents_hierarchy = ['gene_id']\nfeatures_to_replace = \
-        [['First','CDS']['Internal','CDS']['Terminal','CDS']['Single','CDS']]\ngff_version = 3"
+    presets_dict["CEGMA"] = "features_to_replace = [['First','CDS'],['Internal','CDS'],['Terminal','CDS'],['Single','CDS']]\n"
     if presets in presets_dict:
         exec(presets_dict[presets])
     version = gff_version
@@ -274,8 +273,14 @@ def read_gff(gff,annotation_set_to_modify = None, base_features = ['CDS','match_
         annotation_set = AnnotationSet()
     else:
         annotation_set = annotation_set_to_modify
-    #this dictionary helps generate names if features passed with identical ID fields
+    #this dictionary and this list helps generate names if features passed with identical ID fields
     generate_new_ID_dict = {}
+    allready_present_IDs = set()
+    if annotation_set_to_modify:
+        for attribute in annotation_set.__dict__:
+            if type(annotation_set.__dict__[attribute]) == dict:
+                for feature_id in annotations_set.__dict__[attribute]:
+                    allready_present_IDs.append(feature_id)
     #figures out which feature types are base annotations
     base_dict = {}
     #here we go folks
@@ -285,10 +290,12 @@ def read_gff(gff,annotation_set_to_modify = None, base_features = ['CDS','match_
             for string in replace_dict:
                 line = line.replace(string,replace_dict[string])
             fields = line.split('\t')
+            #Tries to detect GFF type if no presets or if presets are vague
+            #
             if version == "auto":
                 if "=" in fields[8]:
                     version = 3
-                else:
+                elif " " in fields[8]:
                     version = 2
                     if not IDfield == None:
                         if not " " + IDfield + " " in " " + fields[8].replace(';',' ') and parents_hierarchy == []:
@@ -297,7 +304,14 @@ def read_gff(gff,annotation_set_to_modify = None, base_features = ['CDS','match_
                             if "gene_id" in fields[8] and "transcript_id" in fields[8]:
                                 parents_hierarchy = ['transcript_id','gene_id']
                             elif "gene_id" in fields[8]:
-                                parents_hierarchy = ['gene_id']
+                                parents_hierarchy = ['transcript_id','gene_id']
+                else:
+                    version = None
+                    parents_hierarchy = ['transcript_id','gene_id']
+                    IDfield = None
+                    parent_field = None
+            #Sets up basic variables- same for all gff types
+            #
             ID = None
             parent = None
             other_attributes = {}
@@ -317,10 +331,12 @@ def read_gff(gff,annotation_set_to_modify = None, base_features = ['CDS','match_
             if fields[7] in ['0','1','2']:
                 other_attributes['phase'] = int(fields[7])
             defline_dict = {}
+            #Parsing the defline
+            #
             for defline_field in fields[8].split(';'):
                 if defline_field != "":
-                    if parent_field == "":
-                        defline_dict[""] = defline_field
+                    if version == None:
+                        defline_dict['gene_id'] = defline_field
                     elif version == 2:
                         if '"' in defline_field:
                             defline_dict[defline_field.split()[0]] = defline_field.split('"')[1]
@@ -342,26 +358,20 @@ def read_gff(gff,annotation_set_to_modify = None, base_features = ['CDS','match_
                         break
             #Assigns ID
             if IDfield != None:
-                try:
-                    ID = defline_dict[IDfield]
-                except KeyError:
-                    if parent != None:
-                        ID = parent + '-' + feature_type
+                ID = defline_dict[IDfield]
             elif parent != None:
                 ID = parent + '-' + feature_type
             else:
                 ID = seqid + '-' + feature_type + fields[3]
             #checks if ID already in annotation_set and adjusts ID if necessary
-            try:
-                annotation_set[ID]
-                if ID in generate_new_ID_dict:
+            if ID in allready_present_IDs:
+                try:
                     generate_new_ID_dict[ID] = generate_new_ID_dict[ID] + 1
                     ID = ID + "-" + str(generate_new_ID_dict[ID])
-                else:
+                except KeyError:
                     generate_new_ID_dict[ID] = 2
                     ID = ID + '2'
-            except KeyError:
-                pass
+            allready_present_IDs.add(ID)
             #Creates parents if necessary, adds to parent if exists
             if parent != None:
                 child_to_assign = ID
@@ -370,33 +380,44 @@ def read_gff(gff,annotation_set_to_modify = None, base_features = ['CDS','match_
                     if parent_feature in defline_dict:
                         parent_feature_ID = defline_dict[parent_feature]
                         parent_feature_type = parent_feature.split('_')[0]
-                        parents_parent = None
-                        if parent_feature_index != len(parents_hierarchy) - 1:
-                            for parents_parent_feature in parents_hierarchy[parent_feature_index + 1:]:
-                                if parents_parent_feature in defline_dict:
-                                    parents_parent = defline_dict[parents_parent_feature]                        
-                        if not parent_feature_type in annotation_set.__dict__:
-                            annotation_set.__dict__[parent_feature_type] = {}
-                        if parent_feature_ID in annotation_set.__dict__[parent_feature_type]:
-                            if not child_to_assign in annotation_set.__dict__[parent_feature_type][parent_feature_ID].child_list:
-                                annotation_set.__dict__[parent_feature_type][parent_feature_ID].child_list.append(child_to_assign)
+                    #guesses a parent id and creates when not in defline dict
+                    else:
+                        parent_feature_type = parent_feature.split('_')[0]
+                        if parents_hierarchy[-1] in defline_dict:
+                            parent_feature_ID = defline_dict[parents_hierarchy[-1]] + "-" + parent_feature_type
                         else:
-                            annotation_set.__dict__[parent_feature_type][parent_feature_ID] = ParentAnnotation(parent_feature_ID, seqid,
-                                                                                            parent_feature_type, child_list = [child_to_assign],
-                                                                                            parent = parents_parent, strand = strand,
-                                                                                            annotation_set = annotation_set)
-                        child_to_assign = parent_feature_ID
-                #In case of no parent from parent hierarchy in defline_dict
-                try:
-                    if not ID in annotation_set[parent].child_list:
+                            parent_feature_ID = ID + "-" + parent_feature_type
+                        #resets parent if this should be parent
+                        if parent_feature_index == 0:
+                            parent = parent_feature_ID
+                    parents_parent = None
+                    if parent_feature_index != len(parents_hierarchy) - 1:
+                        for parents_parent_feature in parents_hierarchy[parent_feature_index + 1:]:
+                            if parents_parent_feature in defline_dict:
+                                parents_parent = defline_dict[parents_parent_feature]                        
+                    if not parent_feature_type in annotation_set.__dict__:
+                        annotation_set.__dict__[parent_feature_type] = {}
+                    if parent_feature_ID in annotation_set.__dict__[parent_feature_type]:
+                        if not child_to_assign in annotation_set.__dict__[parent_feature_type][parent_feature_ID].child_list:
+                            annotation_set.__dict__[parent_feature_type][parent_feature_ID].child_list.append(child_to_assign)
+                    else:
+                        annotation_set.__dict__[parent_feature_type][parent_feature_ID] = ParentAnnotation(parent_feature_ID, seqid,
+                                                                                        parent_feature_type, child_list = [child_to_assign],
+                                                                                        parent = parents_parent, strand = strand,
+                                                                                        annotation_set = annotation_set)
+                    child_to_assign = parent_feature_ID
+
+                #In case of no parent in parent hierarchy:
+                if len(parents_hierarchy) == 0:
+                    try:
                         annotation_set[parent].child_list.append(ID)
-                except KeyError:
-                    print """It seems that this line has a parent attribute but that that parent doesn't have a line itself nor
-                    does this line have a defline attribute that specifies a parent type. I'm afraid this function can't currently
-                    deal with that."""
-                    print ID
-                    print parent
-                    return None
+                    except KeyError:
+                        print """It seems that this line has a parent attribute but that that parent doesn't have a line itself nor
+                        does this line have a defline attribute that specifies a parent type. I'm afraid this function can't currently
+                        deal with that."""
+                        print ID
+                        print parent
+                        return None
             #fills other_attributes from defline
             for defline_attribute in defline_dict:
                 if not defline_attribute in [IDfield,parent_field]:
@@ -622,7 +643,7 @@ class BaseAnnotation():
                     fields_list.append(str(eval('self.' + field)))
                 except AttributeError:
                     fields_list.append('.')
-            if gff_format in ["simple gff3","extended gff3","exon added gff3"]:
+            if gff_format in ["simple gff3","extended gff3","apollo gff3"]:
                 defline = 'ID=' + self.ID
                 if self.parent != None:
                     defline = defline + ';Parent=' + self.parent                
@@ -639,7 +660,7 @@ class BaseAnnotation():
             elif gff_format == "gtf":
                 defline = 'transcript_id ' + self.parent + ';gene_id ' + self.annotation_set[self.parent].parent
             fields_list.append(defline)
-            if gff_format == "exon added gff3" and fields_list[2] == "CDS":
+            if gff_format == "apollo gff3" and fields_list[2] == "CDS":
                 return '\t'.join(fields_list).replace('\tCDS\t','\texon\t').replace('ID=','ID=ExonOf') + "\n" + '\t'.join(fields_list)
             else:
                 return '\t'.join(fields_list)
@@ -731,7 +752,7 @@ class ParentAnnotation():
         else: return ""
     
     def get_gff(self, gff_format = "simple gff3"):
-        """presets currently include: "simple gff3", "extended gff3", "gtf", "exon added gff3", and "augustus hint". Will eventually include more by request"""
+        """presets currently include: "simple gff3", "extended gff3", "gtf", "apollo gff3", and "augustus hint". Will eventually include more by request"""
         if self.annotation_set != None:
             fields = ['seqid','source','feature_type','get_coords()[0]','get_coords()[1]','score','strand','phase']
             fields_list = []
@@ -741,7 +762,7 @@ class ParentAnnotation():
                     fields_list.append(str(eval('self.' + field)))
                 except AttributeError:
                     fields_list.append('.')
-            if gff_format in ["simple gff3","extended gff3","exon added gff3"]:
+            if gff_format in ["simple gff3","extended gff3","apollo gff3"]:
                 defline = 'ID=' + self.ID
                 if self.parent != None:
                     defline = defline + ';Parent=' + self.parent
@@ -749,6 +770,13 @@ class ParentAnnotation():
                 for attribute in self.__dict__:
                     if type(self.__dict__[attribute]).__name__ == 'str' and not attribute in ['ID','Parent','score','strand','seqid','feature_type','phase','source']:
                         defline = defline + ';' + attribute + '=' + self.__dict__[attribute]
+            elif gff_format == "apollo gff3":
+                if 'Name' in self.__dict__:
+                    defline = defline + ';Name=' + self.Name
+                elif 'name' in self.__dict__:
+                    defline = defline + ';Name=' + self.name
+                else:
+                    defline = defline + ';Name=' + self.ID
             elif gff_format[:13] == "augustus hint":
                 parent_line = False
             elif gff_format == 'gtf':
@@ -769,7 +797,7 @@ class ParentAnnotation():
             child_coords.sort()
             for child_index in child_coords:
                 lines_list.append(child_dict[child_index])
-            if gff_format == "exon added gff3":
+            if gff_format == "apollo gff3":
                 lines_list = '\n'.join(lines_list).split('\n')
                 for line in lines_list[:]:
                     if line.split('\t')[2] == "CDS":

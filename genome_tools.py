@@ -527,7 +527,7 @@ def at_content_from_fasta(fasta):
 def convert_gff(gff, input_format, output_format):
     """converts gff from any of the many formats handled by this program to any format this program can output to.
     Currently accepts as input: gff3 (with parent and ID attributes), augustus, RepeatMasker, CEGMA
-    Currently accepts as output: gff3, gtf, exon_added_gff3"""
+    Currently accepts as output: gff3, gtf, apollo_gff3"""
     if input_format == 'gff3':
         presets = None
     else:
@@ -536,8 +536,8 @@ def convert_gff(gff, input_format, output_format):
         gff_format = "simple gff3"
     elif output_format == 'gtf':
         gff_format = 'gtf'
-    elif output_format == "exon_added_gff3":
-        gff_format = "exon added gff3"
+    elif output_format == "apollo_gff3":
+        gff_format = "apollo gff3"
     else:
         print "currently only writes 'gff3' and 'gtf' format"
         return None

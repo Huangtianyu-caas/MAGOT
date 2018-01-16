@@ -1,0 +1,206 @@
+Chromosome14	AUGUSTUS	gene	2	189	0.76	+	.	g3359
+Chromosome14	AUGUSTUS	transcript	2	189	0.76	+	.	g3359.t1
+Chromosome14	AUGUSTUS	terminal	2	189	0.76	+	2	transcript_id "g3359.t1"; gene_id "g3359";
+Chromosome14	AUGUSTUS	CDS	2	189	0.76	+	2	transcript_id "g3359.t1"; gene_id "g3359";
+Chromosome14	AUGUSTUS	stop_codon	187	189	.	+	0	transcript_id "g3359.t1"; gene_id "g3359";
+Chromosome14	AUGUSTUS	gene	595	2472	0.94	+	.	g3360
+Chromosome14	AUGUSTUS	transcript	595	2472	0.94	+	.	g3360.t1
+Chromosome14	AUGUSTUS	start_codon	595	597	.	+	0	transcript_id "g3360.t1"; gene_id "g3360";
+Chromosome14	AUGUSTUS	initial	595	643	0.95	+	0	transcript_id "g3360.t1"; gene_id "g3360";
+Chromosome14	AUGUSTUS	internal	754	1179	0.99	+	2	transcript_id "g3360.t1"; gene_id "g3360";
+Chromosome14	AUGUSTUS	internal	1239	1642	1	+	2	transcript_id "g3360.t1"; gene_id "g3360";
+Chromosome14	AUGUSTUS	internal	1762	2067	1	+	0	transcript_id "g3360.t1"; gene_id "g3360";
+Chromosome14	AUGUSTUS	terminal	2398	2472	1	+	0	transcript_id "g3360.t1"; gene_id "g3360";
+Chromosome14	AUGUSTUS	intron	644	753	1	+	.	transcript_id "g3360.t1"; gene_id "g3360";
+Chromosome14	AUGUSTUS	intron	1180	1238	0.99	+	.	transcript_id "g3360.t1"; gene_id "g3360";
+Chromosome14	AUGUSTUS	intron	1643	1761	1	+	.	transcript_id "g3360.t1"; gene_id "g3360";
+Chromosome14	AUGUSTUS	intron	2068	2397	1	+	.	transcript_id "g3360.t1"; gene_id "g3360";
+Chromosome14	AUGUSTUS	CDS	595	643	0.95	+	0	transcript_id "g3360.t1"; gene_id "g3360";
+Chromosome14	AUGUSTUS	CDS	754	1179	0.99	+	2	transcript_id "g3360.t1"; gene_id "g3360";
+Chromosome14	AUGUSTUS	CDS	1239	1642	1	+	2	transcript_id "g3360.t1"; gene_id "g3360";
+Chromosome14	AUGUSTUS	CDS	1762	2067	1	+	0	transcript_id "g3360.t1"; gene_id "g3360";
+Chromosome14	AUGUSTUS	CDS	2398	2472	1	+	0	transcript_id "g3360.t1"; gene_id "g3360";
+Chromosome14	AUGUSTUS	stop_codon	2470	2472	.	+	0	transcript_id "g3360.t1"; gene_id "g3360";
+Chromosome14	AUGUSTUS	gene	12602	19135	0.73	-	.	g3361
+Chromosome14	AUGUSTUS	transcript	12602	19135	0.73	-	.	g3361.t1
+Chromosome14	AUGUSTUS	stop_codon	12602	12604	.	-	0	transcript_id "g3361.t1"; gene_id "g3361";
+Chromosome14	AUGUSTUS	terminal	12602	12806	0.86	-	1	transcript_id "g3361.t1"; gene_id "g3361";
+Chromosome14	AUGUSTUS	internal	12983	13172	1	-	2	transcript_id "g3361.t1"; gene_id "g3361";
+Chromosome14	AUGUSTUS	initial	19102	19135	0.82	-	0	transcript_id "g3361.t1"; gene_id "g3361";
+Chromosome14	AUGUSTUS	intron	12807	12982	1	-	.	transcript_id "g3361.t1"; gene_id "g3361";
+Chromosome14	AUGUSTUS	intron	13173	19101	0.82	-	.	transcript_id "g3361.t1"; gene_id "g3361";
+Chromosome14	AUGUSTUS	CDS	12602	12806	0.86	-	1	transcript_id "g3361.t1"; gene_id "g3361";
+Chromosome14	AUGUSTUS	CDS	12983	13172	1	-	2	transcript_id "g3361.t1"; gene_id "g3361";
+Chromosome14	AUGUSTUS	CDS	19102	19135	0.82	-	0	transcript_id "g3361.t1"; gene_id "g3361";
+Chromosome14	AUGUSTUS	start_codon	19133	19135	.	-	0	transcript_id "g3361.t1"; gene_id "g3361";
+Chromosome14	AUGUSTUS	gene	23061	26592	0.58	+	.	g3362
+Chromosome14	AUGUSTUS	transcript	23061	26592	0.58	+	.	g3362.t1
+Chromosome14	AUGUSTUS	start_codon	23061	23063	.	+	0	transcript_id "g3362.t1"; gene_id "g3362";
+Chromosome14	AUGUSTUS	initial	23061	23185	0.58	+	0	transcript_id "g3362.t1"; gene_id "g3362";
+Chromosome14	AUGUSTUS	internal	24558	24727	1	+	1	transcript_id "g3362.t1"; gene_id "g3362";
+Chromosome14	AUGUSTUS	internal	24805	25053	1	+	2	transcript_id "g3362.t1"; gene_id "g3362";
+Chromosome14	AUGUSTUS	internal	25125	25285	1	+	2	transcript_id "g3362.t1"; gene_id "g3362";
+Chromosome14	AUGUSTUS	internal	25345	25434	1	+	0	transcript_id "g3362.t1"; gene_id "g3362";
+Chromosome14	AUGUSTUS	terminal	25513	26592	1	+	0	transcript_id "g3362.t1"; gene_id "g3362";
+Chromosome14	AUGUSTUS	intron	23186	24557	1	+	.	transcript_id "g3362.t1"; gene_id "g3362";
+Chromosome14	AUGUSTUS	intron	24728	24804	1	+	.	transcript_id "g3362.t1"; gene_id "g3362";
+Chromosome14	AUGUSTUS	intron	25054	25124	1	+	.	transcript_id "g3362.t1"; gene_id "g3362";
+Chromosome14	AUGUSTUS	intron	25286	25344	1	+	.	transcript_id "g3362.t1"; gene_id "g3362";
+Chromosome14	AUGUSTUS	intron	25435	25512	1	+	.	transcript_id "g3362.t1"; gene_id "g3362";
+Chromosome14	AUGUSTUS	CDS	23061	23185	0.58	+	0	transcript_id "g3362.t1"; gene_id "g3362";
+Chromosome14	AUGUSTUS	CDS	24558	24727	1	+	1	transcript_id "g3362.t1"; gene_id "g3362";
+Chromosome14	AUGUSTUS	CDS	24805	25053	1	+	2	transcript_id "g3362.t1"; gene_id "g3362";
+Chromosome14	AUGUSTUS	CDS	25125	25285	1	+	2	transcript_id "g3362.t1"; gene_id "g3362";
+Chromosome14	AUGUSTUS	CDS	25345	25434	1	+	0	transcript_id "g3362.t1"; gene_id "g3362";
+Chromosome14	AUGUSTUS	CDS	25513	26592	1	+	0	transcript_id "g3362.t1"; gene_id "g3362";
+Chromosome14	AUGUSTUS	stop_codon	26590	26592	.	+	0	transcript_id "g3362.t1"; gene_id "g3362";
+Chromosome14	AUGUSTUS	gene	47906	49996	0.39	+	.	g3363
+Chromosome14	AUGUSTUS	transcript	47906	49996	0.39	+	.	g3363.t1
+Chromosome14	AUGUSTUS	start_codon	47906	47908	.	+	0	transcript_id "g3363.t1"; gene_id "g3363";
+Chromosome14	AUGUSTUS	initial	47906	48026	0.39	+	0	transcript_id "g3363.t1"; gene_id "g3363";
+Chromosome14	AUGUSTUS	internal	48131	48238	0.54	+	2	transcript_id "g3363.t1"; gene_id "g3363";
+Chromosome14	AUGUSTUS	internal	48520	48707	1	+	2	transcript_id "g3363.t1"; gene_id "g3363";
+Chromosome14	AUGUSTUS	internal	48820	48900	1	+	0	transcript_id "g3363.t1"; gene_id "g3363";
+Chromosome14	AUGUSTUS	internal	49057	49228	1	+	0	transcript_id "g3363.t1"; gene_id "g3363";
+Chromosome14	AUGUSTUS	internal	49480	49757	1	+	2	transcript_id "g3363.t1"; gene_id "g3363";
+Chromosome14	AUGUSTUS	terminal	49847	49996	1	+	0	transcript_id "g3363.t1"; gene_id "g3363";
+Chromosome14	AUGUSTUS	intron	48027	48130	0.39	+	.	transcript_id "g3363.t1"; gene_id "g3363";
+Chromosome14	AUGUSTUS	intron	48239	48519	1	+	.	transcript_id "g3363.t1"; gene_id "g3363";
+Chromosome14	AUGUSTUS	intron	48708	48819	1	+	.	transcript_id "g3363.t1"; gene_id "g3363";
+Chromosome14	AUGUSTUS	intron	48901	49056	1	+	.	transcript_id "g3363.t1"; gene_id "g3363";
+Chromosome14	AUGUSTUS	intron	49229	49479	1	+	.	transcript_id "g3363.t1"; gene_id "g3363";
+Chromosome14	AUGUSTUS	intron	49758	49846	1	+	.	transcript_id "g3363.t1"; gene_id "g3363";
+Chromosome14	AUGUSTUS	CDS	47906	48026	0.39	+	0	transcript_id "g3363.t1"; gene_id "g3363";
+Chromosome14	AUGUSTUS	CDS	48131	48238	0.54	+	2	transcript_id "g3363.t1"; gene_id "g3363";
+Chromosome14	AUGUSTUS	CDS	48520	48707	1	+	2	transcript_id "g3363.t1"; gene_id "g3363";
+Chromosome14	AUGUSTUS	CDS	48820	48900	1	+	0	transcript_id "g3363.t1"; gene_id "g3363";
+Chromosome14	AUGUSTUS	CDS	49057	49228	1	+	0	transcript_id "g3363.t1"; gene_id "g3363";
+Chromosome14	AUGUSTUS	CDS	49480	49757	1	+	2	transcript_id "g3363.t1"; gene_id "g3363";
+Chromosome14	AUGUSTUS	CDS	49847	49996	1	+	0	transcript_id "g3363.t1"; gene_id "g3363";
+Chromosome14	AUGUSTUS	stop_codon	49994	49996	.	+	0	transcript_id "g3363.t1"; gene_id "g3363";
+Chromosome14	AUGUSTUS	gene	52842	77485	0.17	-	.	g3364
+Chromosome14	AUGUSTUS	transcript	52842	77485	0.17	-	.	g3364.t1
+Chromosome14	AUGUSTUS	stop_codon	52842	52844	.	-	0	transcript_id "g3364.t1"; gene_id "g3364";
+Chromosome14	AUGUSTUS	terminal	52842	53381	1	-	0	transcript_id "g3364.t1"; gene_id "g3364";
+Chromosome14	AUGUSTUS	internal	53504	53655	1	-	2	transcript_id "g3364.t1"; gene_id "g3364";
+Chromosome14	AUGUSTUS	internal	53988	55596	0.66	-	0	transcript_id "g3364.t1"; gene_id "g3364";
+Chromosome14	AUGUSTUS	internal	64561	64890	0.72	-	0	transcript_id "g3364.t1"; gene_id "g3364";
+Chromosome14	AUGUSTUS	internal	66161	66309	1	-	2	transcript_id "g3364.t1"; gene_id "g3364";
+Chromosome14	AUGUSTUS	internal	76123	76284	0.65	-	2	transcript_id "g3364.t1"; gene_id "g3364";
+Chromosome14	AUGUSTUS	initial	76387	77485	0.26	-	0	transcript_id "g3364.t1"; gene_id "g3364";
+Chromosome14	AUGUSTUS	intron	53382	53503	1	-	.	transcript_id "g3364.t1"; gene_id "g3364";
+Chromosome14	AUGUSTUS	intron	53656	53987	1	-	.	transcript_id "g3364.t1"; gene_id "g3364";
+Chromosome14	AUGUSTUS	intron	55597	64560	0.66	-	.	transcript_id "g3364.t1"; gene_id "g3364";
+Chromosome14	AUGUSTUS	intron	64891	66160	1	-	.	transcript_id "g3364.t1"; gene_id "g3364";
+Chromosome14	AUGUSTUS	intron	66310	76122	0.99	-	.	transcript_id "g3364.t1"; gene_id "g3364";
+Chromosome14	AUGUSTUS	intron	76285	76386	0.45	-	.	transcript_id "g3364.t1"; gene_id "g3364";
+Chromosome14	AUGUSTUS	CDS	52842	53381	1	-	0	transcript_id "g3364.t1"; gene_id "g3364";
+Chromosome14	AUGUSTUS	CDS	53504	53655	1	-	2	transcript_id "g3364.t1"; gene_id "g3364";
+Chromosome14	AUGUSTUS	CDS	53988	55596	0.66	-	0	transcript_id "g3364.t1"; gene_id "g3364";
+Chromosome14	AUGUSTUS	CDS	64561	64890	0.72	-	0	transcript_id "g3364.t1"; gene_id "g3364";
+Chromosome14	AUGUSTUS	CDS	66161	66309	1	-	2	transcript_id "g3364.t1"; gene_id "g3364";
+Chromosome14	AUGUSTUS	CDS	76123	76284	0.65	-	2	transcript_id "g3364.t1"; gene_id "g3364";
+Chromosome14	AUGUSTUS	CDS	76387	77485	0.26	-	0	transcript_id "g3364.t1"; gene_id "g3364";
+Chromosome14	AUGUSTUS	start_codon	77483	77485	.	-	0	transcript_id "g3364.t1"; gene_id "g3364";
+Chromosome14	AUGUSTUS	gene	87437	90131	0.43	+	.	g3365
+Chromosome14	AUGUSTUS	transcript	87437	90131	0.43	+	.	g3365.t1
+Chromosome14	AUGUSTUS	start_codon	87437	87439	.	+	0	transcript_id "g3365.t1"; gene_id "g3365";
+Chromosome14	AUGUSTUS	initial	87437	87671	0.58	+	0	transcript_id "g3365.t1"; gene_id "g3365";
+Chromosome14	AUGUSTUS	internal	88897	88999	1	+	2	transcript_id "g3365.t1"; gene_id "g3365";
+Chromosome14	AUGUSTUS	internal	89100	89361	0.74	+	1	transcript_id "g3365.t1"; gene_id "g3365";
+Chromosome14	AUGUSTUS	internal	89504	89657	1	+	0	transcript_id "g3365.t1"; gene_id "g3365";
+Chromosome14	AUGUSTUS	terminal	89800	90131	0.94	+	2	transcript_id "g3365.t1"; gene_id "g3365";
+Chromosome14	AUGUSTUS	intron	87672	88896	1	+	.	transcript_id "g3365.t1"; gene_id "g3365";
+Chromosome14	AUGUSTUS	intron	89000	89099	1	+	.	transcript_id "g3365.t1"; gene_id "g3365";
+Chromosome14	AUGUSTUS	intron	89362	89503	0.74	+	.	transcript_id "g3365.t1"; gene_id "g3365";
+Chromosome14	AUGUSTUS	intron	89658	89799	0.94	+	.	transcript_id "g3365.t1"; gene_id "g3365";
+Chromosome14	AUGUSTUS	CDS	87437	87671	0.58	+	0	transcript_id "g3365.t1"; gene_id "g3365";
+Chromosome14	AUGUSTUS	CDS	88897	88999	1	+	2	transcript_id "g3365.t1"; gene_id "g3365";
+Chromosome14	AUGUSTUS	CDS	89100	89361	0.74	+	1	transcript_id "g3365.t1"; gene_id "g3365";
+Chromosome14	AUGUSTUS	CDS	89504	89657	1	+	0	transcript_id "g3365.t1"; gene_id "g3365";
+Chromosome14	AUGUSTUS	CDS	89800	90131	0.94	+	2	transcript_id "g3365.t1"; gene_id "g3365";
+Chromosome14	AUGUSTUS	stop_codon	90129	90131	.	+	0	transcript_id "g3365.t1"; gene_id "g3365";
+Chromosome14	AUGUSTUS	gene	101043	127239	0.33	-	.	g3366
+Chromosome14	AUGUSTUS	transcript	101043	127239	0.33	-	.	g3366.t1
+Chromosome14	AUGUSTUS	stop_codon	101043	101045	.	-	0	transcript_id "g3366.t1"; gene_id "g3366";
+Chromosome14	AUGUSTUS	terminal	101043	101460	0.7	-	1	transcript_id "g3366.t1"; gene_id "g3366";
+Chromosome14	AUGUSTUS	internal	102145	102304	1	-	2	transcript_id "g3366.t1"; gene_id "g3366";
+Chromosome14	AUGUSTUS	internal	104089	104262	1	-	2	transcript_id "g3366.t1"; gene_id "g3366";
+Chromosome14	AUGUSTUS	internal	106525	106642	0.98	-	0	transcript_id "g3366.t1"; gene_id "g3366";
+Chromosome14	AUGUSTUS	internal	107048	107289	1	-	2	transcript_id "g3366.t1"; gene_id "g3366";
+Chromosome14	AUGUSTUS	internal	121937	122108	1	-	0	transcript_id "g3366.t1"; gene_id "g3366";
+Chromosome14	AUGUSTUS	internal	122536	122714	1	-	2	transcript_id "g3366.t1"; gene_id "g3366";
+Chromosome14	AUGUSTUS	internal	123408	123701	1	-	2	transcript_id "g3366.t1"; gene_id "g3366";
+Chromosome14	AUGUSTUS	initial	127191	127239	0.46	-	0	transcript_id "g3366.t1"; gene_id "g3366";
+Chromosome14	AUGUSTUS	intron	101461	102144	1	-	.	transcript_id "g3366.t1"; gene_id "g3366";
+Chromosome14	AUGUSTUS	intron	102305	104088	1	-	.	transcript_id "g3366.t1"; gene_id "g3366";
+Chromosome14	AUGUSTUS	intron	104263	106524	0.98	-	.	transcript_id "g3366.t1"; gene_id "g3366";
+Chromosome14	AUGUSTUS	intron	106643	107047	1	-	.	transcript_id "g3366.t1"; gene_id "g3366";
+Chromosome14	AUGUSTUS	intron	107290	121936	1	-	.	transcript_id "g3366.t1"; gene_id "g3366";
+Chromosome14	AUGUSTUS	intron	122109	122535	1	-	.	transcript_id "g3366.t1"; gene_id "g3366";
+Chromosome14	AUGUSTUS	intron	122715	123407	1	-	.	transcript_id "g3366.t1"; gene_id "g3366";
+Chromosome14	AUGUSTUS	intron	123702	127190	0.72	-	.	transcript_id "g3366.t1"; gene_id "g3366";
+Chromosome14	AUGUSTUS	CDS	101043	101460	0.7	-	1	transcript_id "g3366.t1"; gene_id "g3366";
+Chromosome14	AUGUSTUS	CDS	102145	102304	1	-	2	transcript_id "g3366.t1"; gene_id "g3366";
+Chromosome14	AUGUSTUS	CDS	104089	104262	1	-	2	transcript_id "g3366.t1"; gene_id "g3366";
+Chromosome14	AUGUSTUS	CDS	106525	106642	0.98	-	0	transcript_id "g3366.t1"; gene_id "g3366";
+Chromosome14	AUGUSTUS	CDS	107048	107289	1	-	2	transcript_id "g3366.t1"; gene_id "g3366";
+Chromosome14	AUGUSTUS	CDS	121937	122108	1	-	0	transcript_id "g3366.t1"; gene_id "g3366";
+Chromosome14	AUGUSTUS	CDS	122536	122714	1	-	2	transcript_id "g3366.t1"; gene_id "g3366";
+Chromosome14	AUGUSTUS	CDS	123408	123701	1	-	2	transcript_id "g3366.t1"; gene_id "g3366";
+Chromosome14	AUGUSTUS	CDS	127191	127239	0.46	-	0	transcript_id "g3366.t1"; gene_id "g3366";
+Chromosome14	AUGUSTUS	start_codon	127237	127239	.	-	0	transcript_id "g3366.t1"; gene_id "g3366";
+Chromosome14	AUGUSTUS	gene	127462	129461	1	+	.	g3367
+Chromosome14	AUGUSTUS	transcript	127462	129461	1	+	.	g3367.t1
+Chromosome14	AUGUSTUS	start_codon	127462	127464	.	+	0	transcript_id "g3367.t1"; gene_id "g3367";
+Chromosome14	AUGUSTUS	initial	127462	127745	1	+	0	transcript_id "g3367.t1"; gene_id "g3367";
+Chromosome14	AUGUSTUS	terminal	129233	129461	1	+	1	transcript_id "g3367.t1"; gene_id "g3367";
+Chromosome14	AUGUSTUS	intron	127746	129232	1	+	.	transcript_id "g3367.t1"; gene_id "g3367";
+Chromosome14	AUGUSTUS	CDS	127462	127745	1	+	0	transcript_id "g3367.t1"; gene_id "g3367";
+Chromosome14	AUGUSTUS	CDS	129233	129461	1	+	1	transcript_id "g3367.t1"; gene_id "g3367";
+Chromosome14	AUGUSTUS	stop_codon	129459	129461	.	+	0	transcript_id "g3367.t1"; gene_id "g3367";
+Chromosome14	AUGUSTUS	gene	130279	242968	0.45	-	.	g3368
+Chromosome14	AUGUSTUS	transcript	130279	242968	0.45	-	.	g3368.t1
+Chromosome14	AUGUSTUS	stop_codon	130279	130281	.	-	0	transcript_id "g3368.t1"; gene_id "g3368";
+Chromosome14	AUGUSTUS	terminal	130279	130578	0.94	-	0	transcript_id "g3368.t1"; gene_id "g3368";
+Chromosome14	AUGUSTUS	internal	131421	131743	1	-	2	transcript_id "g3368.t1"; gene_id "g3368";
+Chromosome14	AUGUSTUS	internal	140463	140571	1	-	0	transcript_id "g3368.t1"; gene_id "g3368";
+Chromosome14	AUGUSTUS	internal	148161	148378	1	-	2	transcript_id "g3368.t1"; gene_id "g3368";
+Chromosome14	AUGUSTUS	internal	148786	148929	1	-	2	transcript_id "g3368.t1"; gene_id "g3368";
+Chromosome14	AUGUSTUS	internal	150354	150545	1	-	2	transcript_id "g3368.t1"; gene_id "g3368";
+Chromosome14	AUGUSTUS	internal	151957	152149	1	-	0	transcript_id "g3368.t1"; gene_id "g3368";
+Chromosome14	AUGUSTUS	internal	154315	154422	1	-	0	transcript_id "g3368.t1"; gene_id "g3368";
+Chromosome14	AUGUSTUS	internal	185973	186125	1	-	0	transcript_id "g3368.t1"; gene_id "g3368";
+Chromosome14	AUGUSTUS	internal	190759	190917	1	-	0	transcript_id "g3368.t1"; gene_id "g3368";
+Chromosome14	AUGUSTUS	internal	197874	197900	1	-	0	transcript_id "g3368.t1"; gene_id "g3368";
+Chromosome14	AUGUSTUS	internal	212347	212507	1	-	2	transcript_id "g3368.t1"; gene_id "g3368";
+Chromosome14	AUGUSTUS	internal	218943	219086	1	-	2	transcript_id "g3368.t1"; gene_id "g3368";
+Chromosome14	AUGUSTUS	initial	242839	242968	0.5	-	0	transcript_id "g3368.t1"; gene_id "g3368";
+Chromosome14	AUGUSTUS	intron	130579	131420	1	-	.	transcript_id "g3368.t1"; gene_id "g3368";
+Chromosome14	AUGUSTUS	intron	131744	140462	1	-	.	transcript_id "g3368.t1"; gene_id "g3368";
+Chromosome14	AUGUSTUS	intron	140572	148160	1	-	.	transcript_id "g3368.t1"; gene_id "g3368";
+Chromosome14	AUGUSTUS	intron	148379	148785	1	-	.	transcript_id "g3368.t1"; gene_id "g3368";
+Chromosome14	AUGUSTUS	intron	148930	150353	1	-	.	transcript_id "g3368.t1"; gene_id "g3368";
+Chromosome14	AUGUSTUS	intron	150546	151956	1	-	.	transcript_id "g3368.t1"; gene_id "g3368";
+Chromosome14	AUGUSTUS	intron	152150	154314	1	-	.	transcript_id "g3368.t1"; gene_id "g3368";
+Chromosome14	AUGUSTUS	intron	154423	185972	1	-	.	transcript_id "g3368.t1"; gene_id "g3368";
+Chromosome14	AUGUSTUS	intron	186126	190758	1	-	.	transcript_id "g3368.t1"; gene_id "g3368";
+Chromosome14	AUGUSTUS	intron	190918	197873	1	-	.	transcript_id "g3368.t1"; gene_id "g3368";
+Chromosome14	AUGUSTUS	intron	197901	212346	1	-	.	transcript_id "g3368.t1"; gene_id "g3368";
+Chromosome14	AUGUSTUS	intron	212508	218942	1	-	.	transcript_id "g3368.t1"; gene_id "g3368";
+Chromosome14	AUGUSTUS	intron	219087	242838	1	-	.	transcript_id "g3368.t1"; gene_id "g3368";
+Chromosome14	AUGUSTUS	CDS	130279	130578	0.94	-	0	transcript_id "g3368.t1"; gene_id "g3368";
+Chromosome14	AUGUSTUS	CDS	131421	131743	1	-	2	transcript_id "g3368.t1"; gene_id "g3368";
+Chromosome14	AUGUSTUS	CDS	140463	140571	1	-	0	transcript_id "g3368.t1"; gene_id "g3368";
+Chromosome14	AUGUSTUS	CDS	148161	148378	1	-	2	transcript_id "g3368.t1"; gene_id "g3368";
+Chromosome14	AUGUSTUS	CDS	148786	148929	1	-	2	transcript_id "g3368.t1"; gene_id "g3368";
+Chromosome14	AUGUSTUS	CDS	150354	150545	1	-	2	transcript_id "g3368.t1"; gene_id "g3368";
+Chromosome14	AUGUSTUS	CDS	151957	152149	1	-	0	transcript_id "g3368.t1"; gene_id "g3368";
+Chromosome14	AUGUSTUS	CDS	154315	154422	1	-	0	transcript_id "g3368.t1"; gene_id "g3368";
+Chromosome14	AUGUSTUS	CDS	185973	186125	1	-	0	transcript_id "g3368.t1"; gene_id "g3368";
+Chromosome14	AUGUSTUS	CDS	190759	190917	1	-	0	transcript_id "g3368.t1"; gene_id "g3368";
+Chromosome14	AUGUSTUS	CDS	197874	197900	1	-	0	transcript_id "g3368.t1"; gene_id "g3368";
+Chromosome14	AUGUSTUS	CDS	212347	212507	1	-	2	transcript_id "g3368.t1"; gene_id "g3368";
+Chromosome14	AUGUSTUS	CDS	218943	219086	1	-	2	transcript_id "g3368.t1"; gene_id "g3368";
+Chromosome14	AUGUSTUS	CDS	242839	242968	0.5	-	0	transcript_id "g3368.t1"; gene_id "g3368";
+Chromosome14	AUGUSTUS	start_codon	242966	242968	.	-	0	transcript_id "g3368.t1"; gene_id "g3368";
