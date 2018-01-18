@@ -45,7 +45,28 @@ def main():
     eval(command)
 
 def program_help_func(program):
-    print 'hey'
+    p_func = eval(program)
+    p_args = p_func.func_code.co_varnames[:p_func.func_code.co_argcount]
+    p_defs = p_func.func_defaults
+    if p_func.func_doc:
+        p_doc = p_func.func_doc
+    else:
+        p_doc = ""
+    if p_defs:
+        def_offset = len(p_defs) - len(p_args)
+    else:
+        def_offset = -1 * len(p_args)
+    arg_string = ""
+    for arg_num in range(len(p_args)):
+        if p_defs:
+            def_index = arg_num + len(p_defs) - len(p_args)
+            if def_index >= 0:
+                arg_string = arg_string + " " + p_args[arg_num] + "=" + str(p_defs[def_index])
+            else:
+                arg_string = arg_string + " " + p_args[arg_num]
+        else:
+            arg_string = arg_string + " " + p_args[arg_num]
+    print program + " from the MAGOT genomics toolkit\n\n" + p_doc + "\n\nUsage: " + sys.argv[0] + " " + program + arg_string
 
 
 def sanitize_pathname(pathname):
@@ -58,7 +79,8 @@ def help_func():
         if type(globals()[attribute]).__name__ == "function":
             func_list.append(attribute)
     func_list.remove('main')
-    print "\ngenome_tools script from MAGOT.\n\nUsage: ' + sys.argv[0] + ' function [option1=<option1 choice> ...] \n\nFunctions:\n\
+    func_list.sort()
+    print "\ngenome_tools script from MAGOT.\n\nUsage: " + sys.argv[0] + " function [option1=<option1 choice> ...] \n\nFunctions:\n\
     " + '\n    '.join(func_list)
 
 
@@ -525,8 +547,8 @@ def at_content_from_fasta(fasta):
     
 
 def convert_gff(gff, input_format, output_format):
-    """converts gff from any of the many formats handled by this program to any format this program can output to.
-    Currently accepts as input: gff3 (with parent and ID attributes), augustus, RepeatMasker, CEGMA
+    """Converts gff from any of the many formats handled by this program to any format this program can output to.
+    Currently accepts as input: gff3 (with parent and ID attributes), gtf, augustus, RepeatMasker, CEGMA
     Currently accepts as output: gff3, gtf, apollo_gff3"""
     if input_format == 'gff3':
         presets = None
@@ -543,6 +565,21 @@ def convert_gff(gff, input_format, output_format):
         return None
     annotations = genome.read_gff(gff, presets = presets)
     print genome.write_gff(annotations, gff_format)
+
+
+def exonerate2gff(exonerate_output, gff_format='gff3'):
+    """Takes the output from an exonerate run (default output format) and returns a gff file formatted as specified"""
+    if gff_format == 'gff3':
+        write_format = "simple gff3"
+    elif gff_format == 'gtf':
+        write_format = 'gtf'
+    elif gff_format == "apollo_gff3":
+        write_format = "apollo gff3"
+    else:
+        print "currently only writes 'gff3' and 'gtf' format"
+        return None
+    annotations = genome.read_exonerate(exonerate_output)
+    print genome.write_gff(annotations, write_format)
 
 
 def purge_overlaps(gff1, gff_to_purge):
@@ -591,9 +628,6 @@ def besthits_from_psl(psl):
     for qID in score_dict:
         print score_dict[qID][1]
     
-
-
-
 
 def depth_from_gff(depth_file, gff, features = "['CDS','intron','upstream','downstream']", stream_length = '1000'):
     my_annotations = genome.read_gff(gff)

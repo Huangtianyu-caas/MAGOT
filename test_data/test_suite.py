@@ -13,11 +13,12 @@ command_list = [
     ,('gff2fasta C14.fasta StandardGTF.gtf seq_type=protein > temp.test','111942461 233762 temp.test')
     ,('cds2pep CDSannotations.cds > temp.test','111942461 233762 temp.test')
     ,('convert_gff minimalGFF3.gff gff3 gtf > temp.test','1904390924 226225 temp.test')
-    ,('convert_gff StandardGTF.gtf gtf gff3 > temp.test','2934568300 276674 temp.test')
-    ,('convert_gff StandardGTF.gtf gtf apollo_gff3 > temp.test','4062839252 524299 temp.test')
-    ,('convert_gff transcriptlessGTF.gtf gtf apollo_gff3 > temp.test','2893900929 557923 temp.test')
-    ,('convert_gff cegma.gff CEGMA apollo_gff3 > temp.test','3973306495 21308 temp.test')
-    ,('convert_gff AugustusGTF.gtf augustus gff3 > temp.test','1095619631 5899 temp.test')
+    ,('convert_gff StandardGTF.gtf gtf gff3 > temp.test','2459709915 283380 temp.test')
+    ,('convert_gff StandardGTF.gtf gtf apollo_gff3 > temp.test','2937090515 531005 temp.test')
+    ,('convert_gff transcriptlessGTF.gtf gtf apollo_gff3 > temp.test','3402448568 564629 temp.test')
+    ,('convert_gff cegma.gff CEGMA apollo_gff3 > temp.test','1350100166 21428 temp.test')
+    ,('convert_gff AugustusGTF.gtf augustus gff3 > temp.test','3088821175 6039 temp.test')
+    ,('exonerate2gff Exonerate.txt apollo_gff3 > temp.test','268733671 136536 temp.test')
     ]
 
 for command in command_list:

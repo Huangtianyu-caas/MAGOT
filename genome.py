@@ -22,6 +22,42 @@ import numpy
 verbose = True
 
 
+def starjunc2gff(starjunc, output = 'string'):
+    """parses junction file from STAR RNAseq aligner and returns an apollo-style gff3. Output can be "string", "list", or "print"."""
+    if output != 'print':
+        outlines = []
+    junc_file = ensure_file(starjunc)
+    strands = ['.','+','-']
+    counter = 1
+    for line in junc_file:
+        ID = "StarAlignment_" + str(counter)
+        counter = counter + 1
+        atts = line.split('\t')
+        stop1 = int(atts[1]) - 1
+        start1 = stop1 - 20
+        start2 = int(atts[2]) + 1
+        stop2 = start2 + 20
+        gffline1 = '\t'.join([atts[0],'star','match',str(start1),str(stop2),atts[6], strands[int(atts[3])],'.','ID=' + ID])
+        gffline2 = '\t'.join([atts[0],'star','match_part',str(start1),str(stop1),atts[6], strands[int(atts[3])],'.','ID=' + ID + '-part1;Parent=' + ID])
+        gffline3 = '\t'.join([atts[0],'star','match_part',str(start2),str(stop2),atts[6], strands[int(atts[3])],'.','ID=' + ID + '-part2;Parent=' + ID])
+        if output == 'print':
+            print gffline1
+            print gffline2
+            print gffline3
+        else:
+            outlines.append(gffline1)
+            outlines.append(gffline2)
+            outlines.append(gffline3)
+    if output == "string":
+        return "\n".join(outlines)
+    elif output == "list":
+        return outlines
+    elif output == "print":
+        pass
+    else:
+        print "invalid output format"
+
+
 def apollo2genome(apollo_gff):
     apollo_list = read_to_string(apollo_gff).split('>')
     gff3 = apollo_list[0]
@@ -63,7 +99,7 @@ def vulgar2gff(vulgarlist, feature_types=['match','match_part'],source='exonerat
                 else:
                     pass
             elif addfeat:
-                gfflines.append('\t'.join(line_to_add+[str(min(coords)),str(max(coords)),'.',tstrand,'.',
+                gfflines.append('\t'.join(line_to_add+[str(min(coords)),str(max(coords)),score,tstrand,'.',
                                                        'ID='+qname+'_'+feature_types[1]+str(IDnum)+';Parent='+qname]))
                 IDnum = IDnum + 1
                 addfeat = False
@@ -80,12 +116,13 @@ def vulgar2gff(vulgarlist, feature_types=['match','match_part'],source='exonerat
                 elif tstrand == '-':
                     coords.append(str(tposition+1))
     if addfeat:
-        gfflines.append('\t'.join(line_to_add+[str(min(coords)),str(max(coords)),'.',tstrand,'.',
+        gfflines.append('\t'.join(line_to_add+[str(min(coords)),str(max(coords)),score,tstrand,'.',
                                                        'ID='+qname+'_'+feature_types[1]+str(IDnum)+';Parent='+qname]))
     return '\n'.join(gfflines)
 
 
-def read_exonerate(exonerate_output,annotation_set_to_modify = None):
+def read_exonerate(exonerate_output,annotation_set_to_modify = None,feature_types = ['match','match_part']):
+    #Reads an exonerate file with a little help from vulgar2gff. 
     if annotation_set_to_modify == None:
         annotation_set = AnnotationSet()
     else:
@@ -103,6 +140,8 @@ def read_exonerate(exonerate_output,annotation_set_to_modify = None):
             tname = line[16:].replace(':[revcomp]','').replace('[revcomp]','')
             if tname[-1] == " ":
                 tname = tname[:-1]
+        elif line[:16] == "         Model: ":
+            exonerate_model = line.split()[1].split(':')[0]
         elif line[:8] == "vulgar: ":
             vulgar_line_list = line[8:].split()
             #trying to makesure IDs are unique
@@ -114,7 +153,7 @@ def read_exonerate(exonerate_output,annotation_set_to_modify = None):
                 IDdic[ID] = IDdic[ID] + 1
             else:
                 IDdic[ID] = 1
-            gfflines.append(vulgar2gff(vulgar_line_list))
+            gfflines.append(vulgar2gff(vulgar_line_list,feature_types = feature_types,source = exonerate_model))
     read_gff("\n".join(gfflines), annotation_set_to_modify = annotation_set)
     if annotation_set_to_modify == None:
         return annotation_set
@@ -261,7 +300,7 @@ def read_gff(gff,annotation_set_to_modify = None, base_features = ['CDS','match_
     presets_dict = {}
     presets_dict["augustus"] = "features_to_ignore = ['gene','transcript','stop_codon','terminal','internal','initial','intron',\
         'start_codon','single']\nparent_field = None\nparents_hierarchy = ['transcript_id','gene_id']\nIDfield = None\ngff_version=2"
-    presets_dict["RepeatMasker"] = "parent_field = None\nIDfield = 'Target'"
+    presets_dict["RepeatMasker"] = "IDfield = None\nparent_field = None\nparents_hierarchy = ['match']\nfeatures_to_replace = [['similarity','match_part']]"
     presets_dict["CEGMA"] = "features_to_replace = [['First','CDS'],['Internal','CDS'],['Terminal','CDS'],['Single','CDS']]\n"
     if presets in presets_dict:
         exec(presets_dict[presets])
@@ -279,7 +318,7 @@ def read_gff(gff,annotation_set_to_modify = None, base_features = ['CDS','match_
     if annotation_set_to_modify:
         for attribute in annotation_set.__dict__:
             if type(annotation_set.__dict__[attribute]) == dict:
-                for feature_id in annotations_set.__dict__[attribute]:
+                for feature_id in annotation_set.__dict__[attribute]:
                     allready_present_IDs.append(feature_id)
     #figures out which feature types are base annotations
     base_dict = {}
@@ -362,7 +401,7 @@ def read_gff(gff,annotation_set_to_modify = None, base_features = ['CDS','match_
             elif parent != None:
                 ID = parent + '-' + feature_type
             else:
-                ID = seqid + '-' + feature_type + fields[3]
+                ID = seqid + '-' + feature_type + fields[3]            
             #checks if ID already in annotation_set and adjusts ID if necessary
             if ID in allready_present_IDs:
                 try:
@@ -372,6 +411,9 @@ def read_gff(gff,annotation_set_to_modify = None, base_features = ['CDS','match_
                     generate_new_ID_dict[ID] = 2
                     ID = ID + '2'
             allready_present_IDs.add(ID)
+            #If no parent assigned the first time, but one should be created, sets parent name
+            if parent == None and parents_hierarchy != []:
+                parent = ID + '-' + parents_hierarchy[0]
             #Creates parents if necessary, adds to parent if exists
             if parent != None:
                 child_to_assign = ID
@@ -404,9 +446,8 @@ def read_gff(gff,annotation_set_to_modify = None, base_features = ['CDS','match_
                         annotation_set.__dict__[parent_feature_type][parent_feature_ID] = ParentAnnotation(parent_feature_ID, seqid,
                                                                                         parent_feature_type, child_list = [child_to_assign],
                                                                                         parent = parents_parent, strand = strand,
-                                                                                        annotation_set = annotation_set)
+                                                                                        annotation_set = annotation_set, other_attributes = {'source':fields[1]})
                     child_to_assign = parent_feature_ID
-
                 #In case of no parent in parent hierarchy:
                 if len(parents_hierarchy) == 0:
                     try:
@@ -752,7 +793,7 @@ class ParentAnnotation():
         else: return ""
     
     def get_gff(self, gff_format = "simple gff3"):
-        """presets currently include: "simple gff3", "extended gff3", "gtf", "apollo gff3", and "augustus hint". Will eventually include more by request"""
+        """presets currently include: "simple gff3", "extended gff3", "gtf", "apollo gff3", "maker hint", and "augustus hint". Will eventually include more by request"""
         if self.annotation_set != None:
             fields = ['seqid','source','feature_type','get_coords()[0]','get_coords()[1]','score','strand','phase']
             fields_list = []
