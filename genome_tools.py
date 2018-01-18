@@ -79,9 +79,13 @@ def help_func():
         if type(globals()[attribute]).__name__ == "function":
             func_list.append(attribute)
     func_list.remove('main')
-    func_list.sort()
-    print "\ngenome_tools script from MAGOT.\n\nUsage: " + sys.argv[0] + " function [option1=<option1 choice> ...] \n\nFunctions:\n\
-    " + '\n    '.join(func_list)
+    good_boys = ['exclude_from_fasta','coords2fasta','tab2fasta','fasta2tab','gff2fasta','cds2pep','convert_gff','exonerate2gff']
+    good_boys.sort()
+    experimental = list(set(func_list) - set(good_boys))
+    experimental.sort()
+    print "\ngenome_tools script from MAGOT.\n\nUsage: " + sys.argv[0] + \
+    " function [option1=<option1 choice> ...]\n\nRelatively well-behaved functions:\n    " + '\n    '.join(good_boys) + \
+    '\n\nExperimental functions\n    ' +'\n    '.join(experimental)
 
 
 #debug
