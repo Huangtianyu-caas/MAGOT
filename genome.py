@@ -389,7 +389,7 @@ def read_gff(gff,annotation_set_to_modify = None, base_features = ['CDS','match_
         for attribute in annotation_set.__dict__:
             if type(annotation_set.__dict__[attribute]) == dict:
                 for feature_id in annotation_set.__dict__[attribute]:
-                    allready_present_IDs.append(feature_id)
+                    allready_present_IDs.add(feature_id)
     #figures out which feature types are base annotations
     base_dict = {}
     #here we go folks
