@@ -275,8 +275,78 @@ def write_gff(annotation_set, gff_format = "simple gff3"):
                             annotation = annotation_set.__dict__[attribute][annotationID]
                             gff_lines.append(annotation.get_gff(gff_format))
     return '\n'.join(gff_lines)
-                        
+
+def write_bed(annotation_set, columns = 12):
+    bed_lines = []
+    for attribute in annotation_set.__dict__:
+        if type(annotation_set.__dict__[attribute]) == dict:
+            if len(annotation_set.__dict__[attribute]) > 0:
+                if annotation_set.__dict__[attribute][list(annotation_set.__dict__[attribute])[0]].__class__.__name__ == "ParentAnnotation" or annotation_set.__dict__[attribute][list(annotation_set.__dict__[attribute])[0]].__class__.__name__ == "BaseAnnotation":
+                    if annotation_set.__dict__[attribute][list(annotation_set.__dict__[attribute])[0]].parent == None:
+                        for annotationID in annotation_set.__dict__[attribute]:
+                            annotation = annotation_set.__dict__[attribute][annotationID]
+                            bed_lines.append(annotation.get_bed(columns=columns))
+    return '\n'.join(bed_lines)
     
+
+
+def read_bed(bed, annotation_set_to_modify = None, parents_hierarchy = ['region_set'], base_features = 'region'):
+    bed_file = ensure_file(bed)
+    ID_set = set()
+    new_ID_dict = {}
+    if annotation_set_to_modify:
+        annotation_set = annotation_set_to_modify
+        for attribute in annotation_set.__dict__:
+            if type(annotation_set.__dict__[attribute]) == dict:
+                for feature_id in annotation_set.__dict__[attribute]:
+                    ID_set.add(feature_id)
+                    new_ID_dict[feature_id] = 2
+    else:
+        annotation_set = AnnotationSet()
+    possible_fields = ['seqid','start','stop','name','score','strand','thickStart','thickEnd','itemRgb']
+    for line in bed_file:
+        if '\t' in line:
+            fields = line.split('\t')
+        else:
+            fields = line.split()
+        if len(fields) < 3:
+            print "Error: line with fewer than three columns. First three BED columns are manditory."
+            print line
+            continue
+        #Figures out ID
+        if len(fields) > 3:
+            ID = fields[3]
+        else:
+            ID = fields[0] + ':' + fields[1] + '-' + fields[2]
+        bol = False
+        while ID in ID_set:
+            bol = True
+            ID = ID + '-' + str(new_ID_dict[ID])
+            new_ID_dict[ID] = new_ID_dict[ID] + 1
+        if not bol:
+            new_ID_dict[ID] = 2
+        ID_set.add(ID)
+        #create parents
+        for parent_index in range(len(parents_hierarchy)):
+            parent_type = parents_hierarchy[parent_index]
+            if parent_index == 0:
+                child_list = []
+            else:
+                child_list = [parent_ID]
+            if parent_index == len(parents_hierarchy) - 1:
+                parent = None
+                parent_ID = ID
+            else:
+                if parent_index == len(parents_hierarchy) - 2:
+                    parent = ID
+                else:
+                    parent = ID + '-' + parents_hierarchy[parent_index + 1]
+                parent_ID = ID + '-' + parent_type
+            annotation_set[ID] = ParentAnnotation(parent_ID, fields[0], parent_type, child_list = child_list, parent = None, strand = ".", annotation_set = None, other_attributes = {})
+    
+    
+
+
 
 def read_gff(gff,annotation_set_to_modify = None, base_features = ['CDS','match_part','similarity','region'],features_to_ignore = ['exon'],
     gff_version = "auto", parents_hierarchy = [], features_to_replace = [], IDfield = "ID", parent_field = "Parent", presets = None):
@@ -561,14 +631,16 @@ def read_blast_csv(blast_csv,annotation_set_to_modify = None,hierarchy = ['match
         return annotation_set
 
 
-class Genotype():
+class Genotype(tuple):
     """individual genotype to populate a GenotypeDict"""
-    def name(self, ):
-        pass
+    def __init__(self, phased = False, phase_group = None, qual = None):
+        self.phased = phased
+        self.phase_group = phase_group
+        self.qual = qual
     
 
 class Variant():
-    """individual variants from reference genome sequence. Can be SNPs or polimorphism"""
+    """individual variants from reference genome sequence. Can be SNPs or polymorphism"""
     def __init__(self, ref_allele, alt_alleles, genotypes = None, variant_set = None, vcf_header_index = None):
         self.variant_set = variant_set
         self.ref_allele = ref_allele
@@ -577,7 +649,7 @@ class Variant():
     
 
 class VariantSet(dict):
-    """set of variants from reference genome sequence. Can be SNPs or polimorphism"""
+    """set of variants from reference genome sequence. Can be SNPs or polymorphism"""
     def __init__(self, genome = None, vcf_headers = None):
         self.genome = genome
         self.vcf_headers = vcf_headers
@@ -845,6 +917,50 @@ class ParentAnnotation():
                         lines_list.remove(line)
                         lines_list.append(line)
             return '\n'.join(lines_list)
+    
+    def get_bed(self, columns = 12):
+        """If children are base annotations, returns a bed-format line with the number of columns specified. Otherwise,
+        returns bed-format lines for each child"""
+        if self.annotation_set != None:
+            lines_list = []
+            child_blocks = []
+            for child in self.child_list:
+                child_object = self.annotation_set[child]
+                if child_object.__class__.__name__ == "ParentAnnotation":
+                    lines_list.append(child_object.get_bed(columns = columns))
+                elif child_object.__class__.__name__ == "BaseAnnotation":
+                    child_blocks.append((child_object.get_coords()[0] - self.get_coords()[0],
+                                         child_object.get_coords()[1] - child_object.get_coords()[0] + 1))
+            if child_blocks != []:
+                if lines_list != []:
+                    print "Weirdo feature " + self.ID + ", it has both ParentAnnotation and BaseAnnotation children.\
+                    I'll output the line for this feature and it's ParentAnnotation children, but\
+                    something is probably wrong"
+                child_blocks.sort()
+                child_block_sizes = []
+                child_block_starts = []
+                for child_block in child_blocks:
+                    child_block_starts.append(str(child_block[0]))
+                    child_block_sizes.append(str(child_block[1]))
+                potential_fields = ['seqid','get_coords()[0] - 1','get_coords()[1]','ID','score','strand','thickStart','thickEnd','itemRgb']
+                fields = []
+                for field_number in range(columns):
+                    if field_number < 9:
+                        try:
+                            fields.append(str(eval("self." + potential_fields[field_number])))
+                        except AttributeError:
+                            fields.append('.')
+                    elif field_number > 11:
+                        print "Only 12 fields in bed format!"
+                    elif field_number == 9:
+                        fields.append(str(len(child_block_sizes)))
+                    elif field_number == 10:
+                        fields.append(','.join(child_block_sizes))
+                    elif field_number == 11:
+                        fields.append(','.join(child_block_starts))
+                lines_list.append('\t'.join(fields))
+            return "\n".join(lines_list)
+    
 
 
 class Sequence(str):

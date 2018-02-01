@@ -454,24 +454,7 @@ def mask_from_gff(genome_sequence,gff,mask_type="soft", overwrite_softmask="True
         print ">" + seqid + '\n' + "".join(genome_dict[seqid])
     
 
-def replace_names(text_file,replace_table, name_end = " "):
-    """Yes, this is because I'm not good with sed or awk. Judge me all you want. This takes a input file and replaces
-    words in it (that end with the "name_end" variable, which can be set to "") according to an input table. Table format
-    should be "first word (or phrase) to replace{tab}replacement word{line return}" and so on."""
-    text = open(text_file)
-    replace = open(replace_table)
-    replace_dict = {}
-    for line in replace:
-        fields = line.split('\t')
-        replace_dict[fields[0] + name_end] = fields[1] + name_end
-    for line in text:
-        newline = line
-        for word in replace_dict:
-            if word in newline:
-                newline = newline.replace(word,replace_dict[word])
-        print newline[:-1]
-        
-    
+
 def repeatmasker2augustushints(repeatmasker_gff):
     gff = open(repeatmasker_gff)
     for line in gff:
@@ -584,6 +567,17 @@ def exonerate2gff(exonerate_output, gff_format='gff3'):
         return None
     annotations = genome.read_exonerate(exonerate_output)
     print genome.write_gff(annotations, write_format)
+
+def gff2bed(gff, input_format, columns=12):
+    """Takes a gff file and returns a bed file. Number of bed columns can be specified with "columns". \
+    Unless your gff defline has "thickStart", "thickEnd", and/or "itemRGB" in it, columns 7-9 will be returned at "." """
+    if input_format == 'gff3':
+        presets = None
+    else:
+        presets = input_format
+    annotations = genome.read_gff(gff, presets = presets)
+    print genome.write_bed(annotations,columns=eval(columns))
+
 
 
 def purge_overlaps(gff1, gff_to_purge):
