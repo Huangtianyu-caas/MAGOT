@@ -149,7 +149,7 @@ def read_exonerate(exonerate_output,annotation_set_to_modify = None,feature_type
             vulgar_line_list[4] = tname
             ID = vulgar_line_list[0] + '-against-' + vulgar_line_list[4]
             if ID in IDdic:
-                vulgar_line_list[0] = vulgar_line_list[0] + str(IDdic[ID])
+                vulgar_line_list[0] = vulgar_line_list[0] + "-" + str(IDdic[ID])
                 IDdic[ID] = IDdic[ID] + 1
             else:
                 IDdic[ID] = 1
@@ -1007,33 +1007,34 @@ class Sequence(str):
             return newseq
     
     def get_orfs(self, longest = False, strand = 'both', from_atg = False):
-        orflist = []
-        if longest:
-            candidate_list = []
-            longest_orf_len = 0
-        for frame in [0,1,2]:
-            for strand in ['-','+']:
-                translated_seq = self.translate(frame=frame,strand=strand)
-                if translated_seq:
-                    translated_seq_list = translated_seq.split('*')
-                    for orf in translated_seq_list:
-                        if from_atg:
-                            try:
-                                output_orf = 'M' + ''.join(orf.split('M')[1:])
-                            except IndexError:
-                                continue
-                        else:
-                            output_orf = orf
-                        if longest:
-                            if len(output_orf) > longest_orf_len:
-                                candidate_list.append(output_orf)
-                                longest_orf_len = len(output_orf)
-                        else:
-                            orflist.append(output_orf)
-        if longest:
-            return candidate_list[-1]
-        else:
-            return orflist
+        if len(self) > 3:
+            orflist = []
+            if longest:
+                candidate_list = []
+                longest_orf_len = 0
+            for frame in [0,1,2]:
+                for strand in ['-','+']:
+                    translated_seq = self.translate(frame=frame,strand=strand)
+                    if translated_seq:
+                        translated_seq_list = translated_seq.split('*')
+                        for orf in translated_seq_list:
+                            if from_atg:
+                                try:
+                                    output_orf = 'M' + ''.join(orf.split('M')[1:])
+                                except IndexError:
+                                    continue
+                            else:
+                                output_orf = orf
+                            if longest:
+                                if len(output_orf) > longest_orf_len:
+                                    candidate_list.append(output_orf)
+                                    longest_orf_len = len(output_orf)
+                            else:
+                                orflist.append(output_orf)
+            if longest:
+                return candidate_list[-1]
+            else:
+                return orflist
 
 
 class GenomeSequence(dict):
@@ -1105,7 +1106,7 @@ class Genome():
     def write_apollo_gff(self, seqid, suppress_fasta = False):
         if self.genome_sequence != None and self.annotations != None:
             try:
-                apollo_gff = write_longform_gff(self.annotations.get_seqid(seqid))
+                apollo_gff = write_gff(self.annotations.get_seqid(seqid),gff_format = 'apollo gff3')
                 if not suppress_fasta:
                     apollo_gff = apollo_gff + '\n' + self.get_scaffold_fasta(seqid)
                 return apollo_gff
