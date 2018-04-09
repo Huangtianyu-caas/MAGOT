@@ -511,6 +511,33 @@ def composition_by_site(fasta_alignment):
     for position in position_list:
         print "\t".join(position)
 
+
+def protMSA2codonMSA(protein_msa_fasta, unaligned_cdna_fasta):
+    """takes a protein multiple sequence alignment and the corresponding cDNA (both in fasta format) and returns the cDNA
+    aligned accorinding to the protein alignment. Names must be the same in both files. Note: does not perform sanity check.
+    If cDNA is more than 3x longer than protein seq, it will be truncated, while if it is less extra gaps will be output at the end."""
+    msa_dict = {}
+    pep_order =  []
+    for seq in open(protein_msa_fasta).read().replace('\r','').split('>')[1:]:
+        seqsplit = seq.split('\n')
+        msa_dict[seqsplit[0]] = "".join(seqsplit[1:])
+        pep_order.append(seqsplit[0])
+    cdna_dict = {}
+    for seq in open(unaligned_cdna_fasta).read().replace('\r','').split('>')[1:]:
+        seqsplit = seq.split('\n')
+        cdna_dict[seqsplit[0]] = "".join(seqsplit[1:])
+    for seqheader in pep_order:
+        print ">" + seqheader
+        sequence = ""
+        char_num = 0
+        for char in msa_dict[seqheader]:
+            if char == "-" or char_num >= len(cdna_dict[seqheader]) / 3:
+                sequence = sequence + "---"
+            else:
+                sequence = sequence + cdna_dict[seqheader][char_num * 3: char_num * 3 + 3]
+                char_num += 1
+        print sequence
+
    
 def at_content_from_fasta(fasta):
     fasta_file = open(fasta)
