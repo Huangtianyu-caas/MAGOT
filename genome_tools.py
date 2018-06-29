@@ -283,7 +283,7 @@ def prep4apollo(genome_sequence, suppress_fasta = "False", output_directory = 'a
         if starjuncs != None:
             if seqid in starjunc_dic:
                 out.write('\n'.join(starjunc_dic[seqid]) + '\n')
-        out.write(my_genome.write_apollo_gff(seqid, suppress_fasta = suppress_fasta))
+        out.write(my_genome.write_apollo_gff(seqid, suppress_fasta = suppress_fasta).replace('\ttranscript\t','\tmRNA\t'))
         out.close()
     subprocess.call('rm -rf ' + output_directory + '/temp', shell = True)
 
@@ -720,13 +720,16 @@ def coords2fasta(fasta_file,seqid,start,stop,truncate_names = "False"):
     print genome.Genome(fasta_file, truncate_names=eval(truncate_names)).genome_sequence[seqid][int(start) - 1:int(stop)]
 
     
-def cds2pep(fasta_file):
+def cds2pep(fasta_file, longest = False):
     working_string = ""
     for original_line in open(fasta_file):
         line = original_line.replace('\n','').replace('\r','')
         if line[0] == '>':
             if working_string != "":
-                print genome.Sequence(working_string).translate()
+                if longest:
+                    print genome.Sequence(working_string).get_orfs(longest = True)
+                else:
+                    print genome.Sequence(working_string).translate()
                 working_string = ""
             print line
         else:
