@@ -357,7 +357,7 @@ def gff2fasta(genome_sequence,gff,from_exons = "False",seq_type = "nucleotide", 
     if name_from == "transcript":
         print my_genome.annotations.get_fasta('gene',seq_type = seq_type, longest=eval(longest), genomic = eval(genomic))
     elif name_from == "gene":
-        print my_genome.annotations.get_fasta('gene',seq_type = seq_type, longest=eval(longest), genomic = eval(genomic), name_from = "Parent")
+        print my_genome.annotations.get_fasta('gene',seq_type = seq_type, longest=eval(longest), genomic = eval(genomic), name_from = "parent")
 
 
 def starjunc2gff(starjunc_file, output = 'stdout'):
