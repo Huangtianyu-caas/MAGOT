@@ -347,8 +347,8 @@ def get_CDS_peptides(genome_sequence,gff,output_location,gene_name_filters = [],
                     out.write('>' + pep_name + '\n' + CDSdict[CDS][1] + '\n')
 
 
-def gff2fasta(genome_sequence,gff,from_exons = "False",seq_type = "nucleotide", longest = "False", genomic = "False"):
-    my_genome = genome.Genome(genome_sequence)
+def gff2fasta(genome_sequence,gff,from_exons = "False",seq_type = "nucleotide", longest = "False", genomic = "False", truncate_names = "False"):
+    my_genome = genome.Genome(genome_sequence, truncate_names = eval(truncate_names))
     if from_exons == "True":
         my_genome.read_gff(gff, features_to_ignore = "CDS", features_to_replace = [('exon','CDS')])
     else:
