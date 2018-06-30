@@ -808,7 +808,7 @@ class ParentAnnotation():
                     ParentAnnotation objects nor BaseAnnotation object. Get your act together"
             return (min(coords_list),max(coords_list))
     
-    def get_fasta(self, seq_type = "nucleotide", longest=False, genomic = False, name_from = 'ID'):
+    def get_fasta(self, seq_type = "nucleotide", longest=False, genomic = False, name_from = 'ID',seperate_cds = False):
         """Returns fasta of this annotation's sequence. If this feature has multiple subfeatures (e.g. this is a gene
         and it has multiple transcripts), the sequence of each subfeature will be an entry in the fasta string."""
         if genomic == True:
@@ -836,7 +836,10 @@ class ParentAnnotation():
                     for child in children_in_correct_order:
                         seq_list.append(child_dict[child])
                     if seq_type == "nucleotide":
-                        new_seq = Sequence("".join(seq_list))
+                        if seperate_cds:
+                            new_seq = Sequence("\n".join(seq_list))
+                        else:
+                            new_seq = Sequence("".join(seq_list))
                     elif seq_type == "protein":
                         new_seq = Sequence("".join(seq_list)).translate()
                     else:
@@ -845,7 +848,7 @@ class ParentAnnotation():
                 else:
                     for child in self.child_list:
                         try:
-                            child_fasta = self.annotation_set[child].get_fasta(seq_type=seq_type, name_from = name_from)
+                            child_fasta = self.annotation_set[child].get_fasta(seq_type=seq_type, name_from = name_from,seperate_cds = seperate_cds)
                             if child_fasta != "":
                                 fasta_list.append(child_fasta)
                         except AttributeError:
