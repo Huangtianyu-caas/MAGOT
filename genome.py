@@ -712,7 +712,7 @@ class AnnotationSet():
     def get_fasta(self,feature,**kwargs):
         fasta_list = []
         for annotation in eval('self.' + feature):
-                fasta_list.append(eval('self.' + feature)[annotation].get_fasta(kwargs))
+                fasta_list.append(eval('self.' + feature)[annotation].get_fasta(**kwargs))
         return "\n".join(fasta_list)
         
     
